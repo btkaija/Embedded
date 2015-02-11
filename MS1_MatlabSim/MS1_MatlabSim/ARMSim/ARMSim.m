@@ -20,7 +20,7 @@ h = gcf();
 % 2. Connect to WiFly and setup serial callback
 % You will have to change this to agree with your WiFly
 % Note that I have set up the WiFly to have a baud rate of 57600
-ioARMSimWiFly = serial('/dev/tty.usbserial-A601LF6L','BaudRate',57600);
+ioARMSimWiFly = serial('COM6','BaudRate',57600);
 
 % Note that we will pass the figure handle to the timer callback
 % We will use this handle when we update our data plot

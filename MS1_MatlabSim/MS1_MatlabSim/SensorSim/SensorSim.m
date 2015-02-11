@@ -26,7 +26,7 @@ start(sensorSimTimer);
 % Connect to WiFly and setup serial callback
 % You will have to change this to agree with your WiFly
 % Note that I have set up the WiFly to have a baud rate of 57600
-ioSensorSimWiFly=serial('/dev/tty.usbserial-A702ZIPY','BaudRate',57600);
+ioSensorSimWiFly=serial('COM4','BaudRate',57600);
 
 % Note that we will pass the Sensor object to the callback
 ioSensorSimWiFly.BytesAvailableFcn = {@callbackSensorSimWiFly,obj};
