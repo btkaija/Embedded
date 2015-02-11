@@ -6,6 +6,3 @@ fclose(ioARMSimWiFly);
 
 % clear figure
 clf(h);
-
-% Clear all state
-clear all;
