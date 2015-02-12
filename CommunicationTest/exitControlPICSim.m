@@ -4,4 +4,4 @@ fclose(PICport);
 delete(PICport);
 clear PICport
 
-stop(DataFromPICTimer)
+%stop(DataFromPICTimer)

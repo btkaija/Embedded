@@ -11,7 +11,14 @@ for i = 1:length(availablePorts)
         return
     end
 end
-PICport = serial('COM4', 'BaudRate', 57600, 'Terminator', 64);
+
+%init the serial port
+PICport = serial('COM4', 'BaudRate', 57600, 'Terminator', 126);
+PICport.BytesAvailableFcnMode = 'terminator';
+PICport.BytesAvailableFcnCount = 8;
+PICport.BytesAvailableFcn = {@callbackDataFromPIC};
+%***
+
 try
     fopen(PICport);
 catch err
@@ -19,19 +26,21 @@ catch err
     for i = 1:length(availablePorts)
         if strcmp(availablePorts(i).Name, 'Serial-COM4')
             fprintf('ERROR: The port needed for the Control PIC is unavailable\n')
+            delete(PICport)
             clear i availablePorts PICport err;
             return
         end
     end
     fprintf('unknown error')
 end
+
 %end opening of port
-
-DataFromPICTimer = timer;
-DataFromPICTimer.BusyMode = 'drop';
-DataFromPICTimer.TimerFcn = @(x, y)disp('timer fired');
-DataFromPICTimer.Period = 5;
-DataFromPICTimer.ExecutionMode = 'fixedRate';
-
-start(DataFromPICTimer)
+% 
+% DataFromPICTimer = timer;
+% DataFromPICTimer.BusyMode = 'drop';
+% DataFromPICTimer.TimerFcn = @(x, y)disp('timer fired');
+% DataFromPICTimer.Period = 5;
+% DataFromPICTimer.ExecutionMode = 'fixedRate';
+% 
+% start(DataFromPICTimer)
 
