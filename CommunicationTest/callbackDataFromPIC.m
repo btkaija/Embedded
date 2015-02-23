@@ -22,7 +22,7 @@ for i  = 1:numBytes-1
 end
 %turn values into a number
 %add to all the other data
-newData = str2double(string)/100.0
+newData = str2double(string)/100.0;
 recievedData = [recievedData newData];
 %plot the data
 plot(recievedData)

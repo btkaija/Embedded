@@ -1,0 +1,4 @@
+All of this was done similarly to the MS1_Simualtion example provided on Scholar.
+Version of Matlab used: R2014b
+
+In order to get this to run you will need to make sure that both Wiflys are connected and properly set up. then plug both into the computers COM ports. The matlab code is setup to use COM4 so that may need to be changed. Then open the other port with TeraTerm. Running the Matlab script ControlPicSim.m will begin the simulation. you should then be able to send 4 integer messages in the TeraTerm window terminated with '~'. The result should either plot or catch errors. To finish the simulation run the exit script.
