@@ -50,3 +50,7 @@ void init_uart_recv(uart_comm *uc) {
     uc_ptr = uc;
     uc_ptr->buflen = 0;
 }
+
+void init_uart_send(uart_comm *uc) {
+    uc_ptr = uc;
+}

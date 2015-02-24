@@ -13,6 +13,7 @@ typedef struct __uart_comm {
 } uart_comm;
 
 void init_uart_recv(uart_comm *);
+void init_uart_send(uart_comm *);
 void uart_recv_int_handler(void);
 
 #endif

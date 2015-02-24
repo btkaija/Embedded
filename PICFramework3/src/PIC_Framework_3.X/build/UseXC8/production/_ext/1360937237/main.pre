@@ -10951,6 +10951,7 @@ unsigned char buflen;
 } uart_comm;
 
 void init_uart_recv(uart_comm *);
+void init_uart_send(uart_comm *);
 void uart_recv_int_handler(void);
 
 # 7 "../src/my_i2c.h"
@@ -11101,20 +11102,20 @@ i2c_configure_slave(0x9E);
 PIE1bits.SSPIE = 1;
 
 # 303
-Open1USART(0b01111111 & 0b11111111 & 0b11111110 & 0b11111101 &
-0b11111111 & 0b11101111, 0x19);
+Open2USART(0b01111111 & 0b11111111 & 0b11111110 & 0b11111101 &
+0b11111111 & 0b11111111, 51);
 
-# 313
+# 316
 enable_interrupts();
 
-# 333
+# 336
 while (1) {
 
+# 345
+Write2USART('~');
+_delay(1000);
 
-
-block_on_To_msgqueues();
-
-# 344
+# 356
 length = ToMainHigh_recvmsg(10, &msgtype, (void *) msgbuffer);
 if (length < 0) {
 
@@ -11139,7 +11140,7 @@ break;
 case 42:
 {
 
-# 374
+# 386
 switch (last_reg_recvd) {
 case 0xaa:
 {

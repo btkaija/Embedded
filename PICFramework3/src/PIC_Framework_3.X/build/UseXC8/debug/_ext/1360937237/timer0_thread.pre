@@ -1,5 +1,5 @@
 
-# 1 "../src/my_uart.c"
+# 1 "../src/timer0_thread.c"
 
 # 21 "C:\Program Files (x86)\Microchip\xc8\v1.33\include\htc.h"
 extern const char __xc8_OPTIM_SPEED;
@@ -10828,92 +10828,83 @@ extern __nonreentrant void _delaywdt(unsigned long);
 #pragma intrinsic(_delay3)
 extern __nonreentrant void _delay3(unsigned char);
 
-# 10 "../src/messages.h"
-typedef struct __msg {
-unsigned char full;
-unsigned char length;
-unsigned char msgtype;
-unsigned char data[10];
-} msg;
+# 7 "C:\Program Files (x86)\Microchip\xc8\v1.33\include\stdarg.h"
+typedef void * va_list[1];
 
-typedef struct __msg_queue {
-msg queue[4];
-unsigned char cur_write_ind;
-unsigned char cur_read_ind;
-} msg_queue;
+#pragma intrinsic(__va_start)
+extern void * __va_start(void);
 
-# 43
-void init_queues(void);
+#pragma intrinsic(__va_arg)
+extern void * __va_arg(void *, ...);
+
+# 23 "C:\Program Files (x86)\Microchip\xc8\v1.33\include\stdio.h"
+extern int errno;
+
+# 54
+struct __prbuf
+{
+char * ptr;
+void (* func)(char);
+};
+
+# 17 "C:\Program Files (x86)\Microchip\xc8\v1.33\include\conio.h"
+extern int errno;
 
 
+extern void init_uart(void);
 
-void SleepIfOkay(void);
+extern char getch(void);
+extern char getche(void);
+extern void putch(char);
+extern void ungetch(char);
 
+extern __bit kbhit(void);
 
+# 31
+extern char * cgets(char *);
+extern void cputs(const char *);
 
-void block_on_To_msgqueues(void);
-
-# 57
-signed char ToMainLow_sendmsg(unsigned char,unsigned char,void *);
-signed char ToMainLow_recvmsg(unsigned char,unsigned char *,void *);
-
-# 64
-signed char ToMainHigh_sendmsg(unsigned char,unsigned char,void *);
-signed char ToMainHigh_recvmsg(unsigned char,unsigned char *,void *);
-
-# 71
-signed char FromMainLow_sendmsg(unsigned char,unsigned char,void *);
-signed char FromMainLow_recvmsg(unsigned char,unsigned char *,void *);
-
-# 78
-signed char FromMainHigh_sendmsg(unsigned char,unsigned char,void *);
-signed char FromMainHigh_recvmsg(unsigned char,unsigned char *,void *);
-
-# 10 "../src/my_uart.h"
-typedef struct __uart_comm {
-unsigned char buffer[4];
-unsigned char buflen;
-} uart_comm;
-
-void init_uart_recv(uart_comm *);
-void init_uart_send(uart_comm *);
-void uart_recv_int_handler(void);
-
-# 9 "../src/my_uart.c"
-static uart_comm *uc_ptr;
-
-void uart_recv_int_handler() {
-
-# 17
-if ((PIR1bits.RC1IF)) {
-uc_ptr->buffer[uc_ptr->buflen] = Read1USART();
-
-# 25
-uc_ptr->buflen++;
-
-if (uc_ptr->buflen == 4) {
-ToMainLow_sendmsg(uc_ptr->buflen, 31, (void *) uc_ptr->buffer);
-uc_ptr->buflen = 0;
-}
-}
+# 99 "C:\Program Files (x86)\Microchip\xc8\v1.33\include\stdio.h"
+extern int cprintf(char *, ...);
+#pragma printf_check(cprintf)
 
 
 
+extern int _doprnt(struct __prbuf *, const register char *, register va_list);
 
-if (USART1_Status.OVERRUN_ERROR == 1) {
 
-# 43
-RCSTAbits.CREN = 0;
-RCSTAbits.CREN = 1;
-ToMainLow_sendmsg(0, 30, (void *) 0);
-}
-}
+# 191
+#pragma printf_check(vprintf) const
+#pragma printf_check(vsprintf) const
 
-void init_uart_recv(uart_comm *uc) {
-uc_ptr = uc;
-uc_ptr->buflen = 0;
-}
+extern char * gets(char *);
+extern int puts(const char *);
+extern int scanf(const char *, ...) __attribute__((unsupported("scanf() is not supported by this compiler")));
+extern int sscanf(const char *, const char *, ...) __attribute__((unsupported("sscanf() is not supported by this compiler")));
+extern int vprintf(const char *, va_list) __attribute__((unsupported("vprintf() is not supported by this compiler")));
+extern int vsprintf(char *, const char *, va_list) __attribute__((unsupported("vsprintf() is not supported by this compiler")));
+extern int vscanf(const char *, va_list ap) __attribute__((unsupported("vscanf() is not supported by this compiler")));
+extern int vsscanf(const char *, const char *, va_list) __attribute__((unsupported("vsscanf() is not supported by this compiler")));
 
-void init_uart_send(uart_comm *uc) {
-uc_ptr = uc;
+#pragma printf_check(printf) const
+#pragma printf_check(sprintf) const
+extern int sprintf(char *, const char *, ...);
+extern int printf(const char *, ...);
+
+# 1 "../src/timer0_thread.h"
+typedef struct __timer0_thread_struct {
+
+int data;
+} timer0_thread_struct;
+
+int timer0_lthread(timer0_thread_struct *,int,int,unsigned char*);
+
+# 9 "../src/timer0_thread.c"
+int timer0_lthread(timer0_thread_struct *tptr, int msgtype, int length, unsigned char *msgbuffer) {
+unsigned int *msgval;
+
+msgval = (unsigned int *) msgbuffer;
+
+
+
 }

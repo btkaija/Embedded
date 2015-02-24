@@ -300,14 +300,24 @@ void main(void) {
         USART_CONT_RX & USART_BRGH_LOW, 0x19);
 #else
 #ifdef __USE18F46J50
-    Open1USART(USART_TX_INT_OFF & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
-        USART_CONT_RX & USART_BRGH_LOW, 0x19);
+    Open1USART(USART_TX_INT_ON & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
+        USART_CONT_RX & USART_BRGH_HIGH, 51);
+    //51 sets the baud rate to 57600
+    //311 sets to 9600
+    //baud2USART(BAUD_16_BIT_RATE)
 #else
     OpenUSART(USART_TX_INT_OFF & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
         USART_CONT_RX & USART_BRGH_LOW, 0x19);
 #endif
 #endif
-
+    while(1) {
+        //******************testing of uart send*********************
+        while(Busy1USART());
+        Write1USART('~');
+        Delay10KTCYx(0);
+        //_delay(1000); //delays 1000 clock cycles
+        //***********************************************************
+    }
     // Peripheral interrupts can have their priority set to high or low
     // enable high-priority interrupts and low-priority interrupts
     enable_interrupts();
@@ -335,6 +345,7 @@ void main(void) {
         // messages queues has a message (this may put the processor into
         // an idle mode)
         block_on_To_msgqueues();
+
 
         // At this point, one or both of the queues has a message.  It
         // makes sense to check the high-priority messages first -- in fact,
