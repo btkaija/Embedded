@@ -10946,7 +10946,7 @@ signed char FromMainHigh_recvmsg(unsigned char,unsigned char *,void *);
 
 # 10 "../src/my_uart.h"
 typedef struct __uart_comm {
-unsigned char buffer[4];
+unsigned char buffer[8];
 unsigned char buflen;
 } uart_comm;
 
@@ -11092,30 +11092,34 @@ OpenTimer1(0b11111111 & 0b10011111 & 0b11111111 & 0b11111111 & 0b11111011 & 0b11
 IPR1bits.TMR1IP = 0;
 
 IPR1bits.RCIP = 0;
+IPR1bits.TXIP = 0;
 
 IPR1bits.SSPIP = 1;
 
-# 280
+# 281
 i2c_configure_slave(0x9E);
 
-# 295
+# 296
 PIE1bits.SSPIE = 1;
 
-# 303
-Open2USART(0b01111111 & 0b11111111 & 0b11111110 & 0b11111101 &
+# 304
+Open1USART(0b01111111 & 0b11111111 & 0b11111110 & 0b11111101 &
 0b11111111 & 0b11111111, 51);
 
 # 316
 enable_interrupts();
 
-# 336
+# 324
+char * data = "\n\rrunning... ";
+
+# 355
 while (1) {
 
-# 345
-Write2USART('~');
-_delay(1000);
 
-# 356
+
+block_on_To_msgqueues();
+
+# 367
 length = ToMainHigh_recvmsg(10, &msgtype, (void *) msgbuffer);
 if (length < 0) {
 
@@ -11140,7 +11144,7 @@ break;
 case 42:
 {
 
-# 386
+# 397
 switch (last_reg_recvd) {
 case 0xaa:
 {
@@ -11190,6 +11194,7 @@ break;
 case 30:
 case 31:
 {
+
 uart_lthread(&uthread_data, msgtype, length, msgbuffer);
 break;
 };

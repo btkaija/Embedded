@@ -10871,7 +10871,7 @@ signed char FromMainHigh_recvmsg(unsigned char,unsigned char *,void *);
 
 # 10 "../src/my_uart.h"
 typedef struct __uart_comm {
-unsigned char buffer[4];
+unsigned char buffer[8];
 unsigned char buflen;
 } uart_comm;
 
@@ -10891,7 +10891,7 @@ uc_ptr->buffer[uc_ptr->buflen] = Read1USART();
 # 25
 uc_ptr->buflen++;
 
-if (uc_ptr->buflen == 4) {
+if (uc_ptr->buflen == 8) {
 ToMainLow_sendmsg(uc_ptr->buflen, 31, (void *) uc_ptr->buffer);
 uc_ptr->buflen = 0;
 }
@@ -10916,4 +10916,5 @@ uc_ptr->buflen = 0;
 
 void init_uart_send(uart_comm *uc) {
 uc_ptr = uc;
+uc_ptr->buflen=0;
 }

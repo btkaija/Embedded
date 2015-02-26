@@ -1,6 +1,6 @@
 Version 3.2 HI-TECH Software Intermediate Code
 "10 ../src/my_uart.h
-[s S1133 `uc -> 4 `i `uc 1 ]
+[s S1133 `uc -> 5 `i `uc 1 ]
 [n S1133 __uart_comm buffer buflen ]
 "9112 C:\Program Files (x86)\Microchip\xc8\v1.33\include\pic18f46j50.h
 [s S610 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 ]
@@ -8382,7 +8382,7 @@ Version 3.2 HI-TECH Software Intermediate Code
 [; ;messages.h: 78: signed char FromMainHigh_sendmsg(unsigned char,unsigned char,void *);
 [; ;messages.h: 79: signed char FromMainHigh_recvmsg(unsigned char,unsigned char *,void *);
 [; ;my_uart.h: 10: typedef struct __uart_comm {
-[; ;my_uart.h: 11: unsigned char buffer[4];
+[; ;my_uart.h: 11: unsigned char buffer[5];
 [; ;my_uart.h: 12: unsigned char buflen;
 [; ;my_uart.h: 13: } uart_comm;
 [; ;my_uart.h: 15: void init_uart_recv(uart_comm *);
@@ -8407,9 +8407,9 @@ Version 3.2 HI-TECH Software Intermediate Code
 [; ;my_uart.c: 25: uc_ptr->buflen++;
 "25
 [e ++ . *U _uc_ptr 1 -> -> 1 `i `uc ]
-[; ;my_uart.c: 27: if (uc_ptr->buflen == 4) {
+[; ;my_uart.c: 27: if (uc_ptr->buflen == 5) {
 "27
-[e $ ! == -> . *U _uc_ptr 1 `i -> 4 `i 1136  ]
+[e $ ! == -> . *U _uc_ptr 1 `i -> 5 `i 1136  ]
 {
 [; ;my_uart.c: 28: ToMainLow_sendmsg(uc_ptr->buflen, 31, (void *) uc_ptr->buffer);
 "28
@@ -8473,7 +8473,10 @@ Version 3.2 HI-TECH Software Intermediate Code
 [; ;my_uart.c: 55: uc_ptr = uc;
 "55
 [e = _uc_ptr _uc ]
-[; ;my_uart.c: 56: }
+[; ;my_uart.c: 56: uc_ptr->buflen=0;
 "56
+[e = . *U _uc_ptr 1 -> -> 0 `i `uc ]
+[; ;my_uart.c: 57: }
+"57
 [e :UE 1139 ]
 }

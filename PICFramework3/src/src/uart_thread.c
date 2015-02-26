@@ -10,9 +10,21 @@ int uart_lthread(uart_thread_struct *uptr, int msgtype, int length, unsigned cha
     if (msgtype == MSGT_OVERRUN) {
     }
     else if (msgtype == MSGT_UART_DATA) {
+        
         // print the message (this assumes that the message
         // 		was a printable string)
-        msgbuffer[length] = '\0'; // null-terminate the array as a string
+        //msgbuffer[length] = '~'
+        //msgbuffer[length] = '\0'; // null-terminate the array as a string
         // Now we would do something with it
+        char i = 0, curr_char;
+        for (i =0;i<length;i++)
+        {
+            curr_char = msgbuffer[i];
+            if(curr_char != '~')
+                while(Busy1USART());
+                putc1USART(curr_char);
+        }
+        putc1USART('~');
+        //puts1USART(msgbuffer);
     }
 }

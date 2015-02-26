@@ -23,7 +23,7 @@ void uart_recv_int_handler() {
 #endif
 
         uc_ptr->buflen++;
-        // check if a message should be sent
+        // check if a message should be sent when buffer is full
         if (uc_ptr->buflen == MAXUARTBUF) {
             ToMainLow_sendmsg(uc_ptr->buflen, MSGT_UART_DATA, (void *) uc_ptr->buffer);
             uc_ptr->buflen = 0;
@@ -53,4 +53,5 @@ void init_uart_recv(uart_comm *uc) {
 
 void init_uart_send(uart_comm *uc) {
     uc_ptr = uc;
+    uc_ptr->buflen=0;
 }

@@ -10905,8 +10905,16 @@ if (msgtype == 30) {
 }
 else if (msgtype == 31) {
 
+# 19
+char i = 0, curr_char;
+for (i =0;i<length;i++)
+{
+curr_char = msgbuffer[i];
+if(curr_char != '~')
+while((!TXSTA1bits.TRMT));
+Write1USART(curr_char);
+}
 
-msgbuffer[length] = '\0';
 
 }
 }

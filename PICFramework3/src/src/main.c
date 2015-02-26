@@ -267,6 +267,7 @@ void main(void) {
     IPR1bits.TMR1IP = 0;
     // USART RX interrupt
     IPR1bits.RCIP = 0;
+    IPR1bits.TXIP = 0;
     // I2C interrupt
     IPR1bits.SSPIP = 1;
 
@@ -300,24 +301,16 @@ void main(void) {
         USART_CONT_RX & USART_BRGH_LOW, 0x19);
 #else
 #ifdef __USE18F46J50
-    Open1USART(USART_TX_INT_ON & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
+    Open1USART(USART_TX_INT_OFF & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
         USART_CONT_RX & USART_BRGH_HIGH, 51);
     //51 sets the baud rate to 57600
-    //311 sets to 9600
-    //baud2USART(BAUD_16_BIT_RATE)
+    //311/312 sets to 9600
 #else
     OpenUSART(USART_TX_INT_OFF & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT &
         USART_CONT_RX & USART_BRGH_LOW, 0x19);
 #endif
 #endif
-    while(1) {
-        //******************testing of uart send*********************
-        while(Busy1USART());
-        Write1USART('~');
-        Delay10KTCYx(0);
-        //_delay(1000); //delays 1000 clock cycles
-        //***********************************************************
-    }
+    
     // Peripheral interrupts can have their priority set to high or low
     // enable high-priority interrupts and low-priority interrupts
     enable_interrupts();
@@ -328,7 +321,26 @@ void main(void) {
     goto 0x08
     _endasm;
      */
+    char * data = "\n\rrunning... ";
 
+//    while(1) {
+//        //******************testing of uart send*********************
+//        puts1USART(data);
+//
+//        while(!DataRdy1USART());
+//        //gets1USART(msg, len);
+//        c = getc1USART();
+//
+//        Write1USART('~');
+//        while(Busy1USART());
+//        Write1USART(c);
+//        Write1USART('~');
+//        Delay10KTCYx(0);
+//        //_delay(1000); //delays 1000 clock cycles
+//        //***********************************************************
+//    }
+
+    
     // printf() is available, but is not advisable.  It goes to the UART pin
     // on the PIC and then you must hook something up to that to view it.
     // It is also slow and is blocking, so it will perturb your code's operation
@@ -431,6 +443,7 @@ void main(void) {
                 case MSGT_OVERRUN:
                 case MSGT_UART_DATA:
                 {
+                    //puts1USART(data);
                     uart_lthread(&uthread_data, msgtype, length, msgbuffer);
                     break;
                 };

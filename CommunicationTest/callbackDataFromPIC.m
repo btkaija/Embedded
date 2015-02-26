@@ -1,7 +1,12 @@
 %callback to get data from pic
 function callbackDataFromPIC(obj, event)
 numBytes = obj.BytesAvailable;
-binaryData = fread(obj, numBytes);
+binaryData = [];
+if numBytes > 0
+    binaryData = fread(obj, numBytes)
+else
+    fprintf('No bytes! Is the PIC broken!?')
+end
 string = char(binaryData);
 string = string(1:numBytes-1);
 fprintf('Data being recieved! Data: %s\n', string)
