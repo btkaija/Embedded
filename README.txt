@@ -1,0 +1,1 @@
+The Matlab scripts are essentially the same as the first milestone with a few small changes but the new framework code implements the USART at 57600 baud to communicate over WiFly. This is essentially a test that sends a message to the control PIC and echos it back to the advisory system.

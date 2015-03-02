@@ -14,8 +14,8 @@ end
 
 %init the serial port
 PICport = serial('COM6', 'BaudRate', 57600, 'Terminator', 126);
-PICport.BytesAvailableFcnMode = 'terminator';
-PICport.BytesAvailableFcnCount = 8;
+PICport.BytesAvailableFcnMode = 'byte';
+PICport.BytesAvailableFcnCount = 5;
 PICport.BytesAvailableFcn = {@callbackDataFromPIC};
 %***
 
