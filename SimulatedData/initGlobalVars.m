@@ -1,6 +1,3 @@
-function initGlobalVars()
-
+global simulateDataTimer;
 global simulatedSensorData;
 global simulatedMotorData;
-
-end
