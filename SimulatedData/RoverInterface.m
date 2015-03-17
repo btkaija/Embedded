@@ -3,6 +3,7 @@ classdef RoverInterface < handle
         simulator
         fig
         updateGUITimer
+        filenameTextbox
     end
     methods
         function ri = RoverInterface()
@@ -26,13 +27,7 @@ classdef RoverInterface < handle
             ri.updateGUITimer.Period = 3;
             ri.updateGUITimer.ExecutionMode = 'fixedRate';
 
-            %create GUI elements
-            startButton = uicontrol('Style', 'pushbutton', 'String', 'Start Sim',...
-                                'Position', [10, screen_height-50, 75, 50],...
-                                'Callback', @ri.startButton_callback);
-            stopButton = uicontrol('Style', 'pushbutton', 'String', 'Stop Sim',...
-                               'Position', [10, screen_height-100, 75, 50],...
-                               'Callback', @ri.stopButton_callback);
+            initButtons(ri, screen_height);
             %begin adding two plots
 
             subplot(2,1,1);
@@ -56,6 +51,28 @@ classdef RoverInterface < handle
             stop(ri.updateGUITimer)
         end
         
+        function exportButton_callback(ri, ~, ~)
+            fprintf('Exporting data...\n')
+            filename = get(ri.filenameTextbox, 'String');
+            filename = strcat(filename, '.dat');
+            %put both sets of data together
+            allData = [ri.simulator.simulatedMotorData, ri.simulator.simulatedSensorData];
+            dlmwrite(filename, allData);
+            
+        end
+        
+        function importButton_callback(ri, ~, ~)
+            fprintf('Importing data...\n')
+%             filename = get(ri.filenameTextbox, 'String');
+%             filename = strcat(filename, '.dat');
+%             allData = dlmread(filename);
+%             len = length(allData);
+%             md = allData(1:len/2);
+%             sd = allData(len/2 +1:len);
+%             ri.simulator.simulatedMotorData = md;
+%             ri.simulator.simulatedSensorData = sd;
+            %updateGUI_callback('', '', ri);
+        end
     end
     methods (Static)
         function updateGUI_callback(~, ~, ri)
@@ -75,11 +92,30 @@ classdef RoverInterface < handle
             hold off
             ylabel('Motor Speed (rpm)');
             xlabel('Sample Number');
-        end
-
-
-        
+        end  
     end
+    methods (Access = private)
+        function initButtons(ri, screen_height)
+            %create GUI elements
+            startButton = uicontrol('Style', 'pushbutton', 'String', 'Start Sim',...
+                'Position', [10, screen_height-50, 100, 50],...
+                'Callback', @ri.startButton_callback);
+            stopButton = uicontrol('Style', 'pushbutton', 'String', 'Stop Sim',...
+                'Position', [10, screen_height-100, 100, 50],...
+                'Callback', @ri.stopButton_callback);
+            exportButton = uicontrol('Style', 'pushbutton', 'String', 'Export Data',...
+                'Position', [10, screen_height-150, 100, 50],...
+                'Callback', @ri.exportButton_callback);
+            ri.filenameTextbox = uicontrol('Style', 'edit', 'String', 'name of data file',...
+                'Position', [10, screen_height-175, 100, 25]);
+            importButton = uicontrol('Style', 'pushbutton', 'String', 'Import Data',...
+                'Position', [10, screen_height-225, 100, 50],...
+                'Callback', @ri.importButton_callback);
+                           
+            
+        end
+    end
+    
 end
         
 

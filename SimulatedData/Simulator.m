@@ -65,6 +65,14 @@ classdef Simulator < handle
         function smd = get.simulatedMotorData(obj)
             smd = obj.simulatedMotorData;
         end
+        
+%         function obj = set.simulatedSensorData(obj, ssd)
+%             obj.simulatedSensorData = ssd;
+%         end
+%         
+%         function obj = set.simulatedMotorData(obj, smd)
+%             obj.simulatedSensorData = smd;
+%         end
    end
    methods (Static)
        %callback function for the timer simulator
