@@ -1,8 +1,13 @@
 classdef Simulator < handle
    properties
        simulateDataTimer
-       simulatedSensorData
-       simulatedMotorData
+       leftIRSensorData
+       rightIRSensorData
+       leftUSSensorData
+       rightUSSensorData
+       leftMotorData
+       rightMotorData
+       tiltData
    end
    methods
         function sim = Simulator()
@@ -22,9 +27,8 @@ classdef Simulator < handle
         
         %this function stops the timer
         function stopSimulateDataTimer(obj)
-            initGlobalVars
             try
-                fprintf('Stopping timer...\n');
+                fprintf('Stopping sim timer...\n');
                 stop(obj.simulateDataTimer);
             catch
                 fprintf('Error stoping timer: simulateDataTimer does not exist\n');    
@@ -32,55 +36,96 @@ classdef Simulator < handle
         end
         
         
-        function updateSimuatedData(nm, ns, sim)
-            initGlobalVars
-            fprintf('Recieving data\n');
-            try
-                sim.simulatedSensorData = [sim.simulatedSensorData ns];
-                sim.simulatedMotorData = [sim.simulatedMotorData nm];
-%                 figure
-%                 plot(sim.simulatedSensorData)
-%                 plot(sim.simulatedMotorData)
-            catch
-                fprintf('Simulated data variables not defined!\n');
-            end
+        function updateSimuatedData(sim)
+            fprintf('Simulating data\n');
+            sim.leftIRSensorData = [sim.leftIRSensorData sim.simulateRandData()];
+            sim.rightIRSensorData = [sim.rightIRSensorData sim.simulateRandData()];
+            sim.leftUSSensorData = [sim.leftUSSensorData sim.simulateRandData()];
+            sim.rightUSSensorData = [sim.rightUSSensorData sim.simulateRandData()];
+            sim.leftMotorData = [sim.leftMotorData sim.simulateRandData()];
+            sim.rightMotorData = [sim.rightMotorData sim.simulateRandData()];
+            sim.tiltData = [sim.tiltData sim.simulateRandTilt()];
 
         end
         
-        %simulates the sensor data and returns it
-        function newSimulatedData = simulateSensorData(obj)
-            newSimulatedData = rand(1, 1)*100;
+        %get left IR sensor data
+        function LIRD = get.leftIRSensorData(obj)
+            LIRD = obj.leftIRSensorData;
+        end
+        %get right IR sensor data
+        function RIRD = get.rightIRSensorData(obj)
+            RIRD = obj.rightIRSensorData;
+        end
+        %get left US sensor data
+        function LUSD = get.leftUSSensorData(obj)
+            LUSD = obj.leftUSSensorData;
+        end
+        %get right US sensor data
+        function RUSD = get.rightUSSensorData(obj)
+            RUSD = obj.rightUSSensorData;
+        end
+        %get left motor encoder data
+        function RMD = get.rightMotorData(obj)
+            RMD = obj.rightMotorData;
+        end
+        %get right motor encoder data
+        function LMD = get.leftMotorData(obj)
+            LMD = obj.leftMotorData;
         end
         
-        
-        %simulates the motor data and returns it
-        function newSimulatedData = simulateMotorData(obj)
-            newSimulatedData = rand(1, 1)*100;
+        %set left IR data
+        function setLeftIRSensorData(obj, data)
+            obj.leftIRSensorData = data;
+        end
+        %set right IR data
+        function setRightIRSensorData(obj, data)
+            obj.rightIRSensorData = data;
+        end
+        %set left US data
+        function setLeftUSSensorData(obj, data)
+            obj.leftUSSensorData = data;
+        end
+        %set right US data
+        function setRightUSSensorData(obj, data)
+            obj.rightUSSensorData = data;
+        end
+        %set right motor data
+        function setRightMotorData(obj, data)
+            obj.rightMotorData = data;
+        end
+        %set left motor data
+        function setLeftMotorData(obj, data)
+            obj.leftMotorData = data;
         end
         
-        function ssd = get.simulatedSensorData(obj)
-            ssd = obj.simulatedSensorData;
+        %get tilt data
+        function t = get.tiltData(obj)
+            t = obj.tiltData;
         end
-        
-        function smd = get.simulatedMotorData(obj)
-            smd = obj.simulatedMotorData;
+        %set tilt data
+        function setTiltData(obj, data)
+            obj.tiltData = data;
         end
-        
-%         function obj = set.simulatedSensorData(obj, ssd)
-%             obj.simulatedSensorData = ssd;
-%         end
-%         
-%         function obj = set.simulatedMotorData(obj, smd)
-%             obj.simulatedSensorData = smd;
-%         end
+ 
    end
    methods (Static)
        %callback function for the timer simulator
-        function simulateDataTimer_callback(timerobj, event, sim)
-            newMotor = simulateMotorData(sim);
-            newSensor = simulateSensorData(sim);
-
-            updateSimuatedData(newMotor, newSensor, sim);
+        function simulateDataTimer_callback(~, ~, sim)
+            %TODO: implement real simulations
+            updateSimuatedData(sim);
         end
+        %simulates random data
+        function randData = simulateRandData()
+            randData = rand(1, 1)*100;
+        end
+        
+        %generate random tilt slope
+        function randTilt = simulateRandTilt()
+            randTilt = rand(1,1);
+            if rand(1,1) > .5
+                randTilt = randTilt * -1;
+            end
+        end
+
    end
 end
