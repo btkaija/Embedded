@@ -12,6 +12,7 @@ classdef RoverInterface < handle
         rightMotorPlot
         tiltPlot
         tiltLabel
+        degreeEntry
     end
     methods
         %constructor
@@ -36,7 +37,7 @@ classdef RoverInterface < handle
             ri.updateGUITimer = timer;
             ri.updateGUITimer.BusyMode = 'drop';
             ri.updateGUITimer.TimerFcn = {@RoverInterface.updateGUI_callback, ri};
-            ri.updateGUITimer.Period = 3;
+            ri.updateGUITimer.Period = 1;
             ri.updateGUITimer.ExecutionMode = 'fixedRate';
             start(ri.updateGUITimer)
             
@@ -69,7 +70,8 @@ classdef RoverInterface < handle
                 ri.simulator.leftUSSensorData,...
                 ri.simulator.rightUSSensorData,...
                 ri.simulator.leftMotorData,...
-                ri.simulator.rightMotorData];
+                ri.simulator.rightMotorData,...
+                ri.simulator.tiltData];
             dlmwrite(filename, allData);
             
         end
@@ -83,12 +85,13 @@ classdef RoverInterface < handle
             allData = dlmread(filename);
             len = length(allData);
             %split data from file
-            LIRSD = allData(1:len/6);
-            RIRSD = allData((len/6)+1:(len/6)*2);
-            LUSSD = allData((len/6)*2+1:(len/6)*3);
-            RUSSD = allData((len/6)*3+1:(len/6)*4);
-            LMD = allData((len/6)*4+1:(len/6)*5);
-            RMD = allData((len/6)*5+1:len); 
+            LIRSD = allData(1:len/7);
+            RIRSD = allData((len/7)+1:(len/7)*2);
+            LUSSD = allData((len/7)*2+1:(len/7)*3);
+            RUSSD = allData((len/7)*3+1:(len/7)*4);
+            LMD = allData((len/7)*4+1:(len/7)*5);
+            RMD = allData((len/7)*5+1:(len/7)*6); 
+            TD = allData((len/7)*6+1:len);
             %update simulator storage
             setLeftIRSensorData(ri.simulator, LIRSD)
             setRightIRSensorData(ri.simulator, RIRSD)
@@ -96,6 +99,7 @@ classdef RoverInterface < handle
             setRightUSSensorData(ri.simulator, RUSSD)
             setLeftMotorData(ri.simulator, LMD)
             setRightMotorData(ri.simulator, RMD)
+            setTiltData(ri.simulator, TD)
         end
         
         function clearButton_callback(ri, ~, ~)
@@ -106,7 +110,20 @@ classdef RoverInterface < handle
             setRightUSSensorData(ri.simulator, [])
             setLeftMotorData(ri.simulator, [])
             setRightMotorData(ri.simulator, [])
+            setTiltData(ri.simulator, [])
             ri.clearPlots(ri)
+        end
+        
+        function traverseButton_callback(ri, ~, ~)
+            fprintf('traverse\n');
+        end
+        
+        function haltButton_callback(ri, ~, ~)
+            fprintf('halt\n');
+        end
+        
+        function turnButton_callback(ri, ~, ~)
+            fprintf('turn\n');
         end
         
         
@@ -120,6 +137,7 @@ classdef RoverInterface < handle
             cla(ri.rightUSSensorPlot)
             cla(ri.rightMotorPlot)
             cla(ri.leftMotorPlot)
+            cla(ri.tiltPlot)
         end
         function updateGUI_callback(~, ~, ri)
             fprintf('Updating GUI...\n');
@@ -139,12 +157,12 @@ classdef RoverInterface < handle
             
             dataLen = length(ri.simulator.tiltData);
             if dataLen ~= 0
+                %get most recent tilt and display
                 slope = ri.simulator.tiltData(dataLen);
-                x = [0.9, -0.9];
-                y = [slope, slope * -1];
-                plot(x, y, 'b')
-                axis([-1 1 -1 1])
+                plot(ri.tiltPlot, [1, -1], [slope, slope*-1], 'b')
+                axis(ri.tiltPlot, [-1 1 -1 1])
                 ri.tiltPlot.Title.String = 'Tilt Angle';
+                %update label
                 ri.tiltLabel.String = strcat('The angle of the rover is  ',...
                     num2str(slope*50), ' degrees');
             end        
@@ -190,7 +208,7 @@ classdef RoverInterface < handle
             ri.tiltLabel = uicontrol(dataPanel, 'Style', 'text',...
                 'String', 'The angle of the rover is XX degrees',...
                 'Units', 'normalized',...
-                'Position', [.9 .12 .1 .11]);
+                'Position', [.8 0 .2 .25]);
 
             
         end
@@ -200,15 +218,53 @@ classdef RoverInterface < handle
         end
         
         function initControlButtons(ri)
-            controlPanel = uipanel('Title', 'Controls', 'Position', [0, 0, .2, .5]);
+            controlPanel = uipanel('Title', 'Rover Controls', 'Position', [0, 0, .2, .5]);
+            
+            autoPanel = uipanel(controlPanel, 'Position', [0 .85 1 .15]);
+            commandPanel = uipanel(controlPanel, 'Position', [0 0 1 .85]);
+            
+            traverseButton = uicontrol(autoPanel, 'Style', 'pushbutton',...
+                'String', 'Traverse Course',...
+                'Units', 'normalized',...
+                'Position', [0 0 .5 1],...
+                'Callback', @ri.traverseButton_callback);
+            
+            haltButton = uicontrol(autoPanel, 'Style', 'pushbutton',...
+                'String', 'Halt',...
+                'Units', 'normalized',...
+                'Position', [.5 0 .5 1],...
+                'Callback', @ri.haltButton_callback);
+            
+            turnButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Turn X Degrees',...
+                'Units', 'normalized',...
+                'Position', [0 .9 .5 .1],...
+                'Callback', @ri.turnButton_callback);
+            
+            ri.degreeEntry = uicontrol(commandPanel, 'Style', 'edit',...
+                'String', '45',...
+                'Units', 'normalized',...
+                'Position', [.5 .9 .5 .1]);
+            %TODO: implement buttons
+            %turnButton
+            %ri.degreeEntry
+            %forwardButton
+            %ri.fdistEntry
+            %reverseButton
+            %ri.rdistEntry
+            %uturnButton
+            %ri.uturnrightToggle
+            %ri.uturnleftToggle
+            %uturnButtongroup
+            
         end
         
         function initOptionButtons(ri)
             %create GUI elements
-            optionPanel = uipanel('Title', 'Options', 'Position', [0 .5 .2 .5]);
+            optionPanel = uipanel('Title', 'Data Options', 'Position', [0 .5 .2 .5]);
             
-            simGroup = uipanel(optionPanel, 'Position', [0, .75, 1, .25]);
-            importExportGroup = uipanel(optionPanel, 'Position', [0, .5, 1, .25]);
+            simGroup = uipanel(optionPanel, 'Position', [0, .85, 1, .15]);
+            importExportGroup = uipanel(optionPanel, 'Position', [0, .60, 1, .25]);
             
             startButton = uicontrol(simGroup, 'Style', 'pushbutton',...
                 'String', 'Start Sim',...
@@ -225,29 +281,29 @@ classdef RoverInterface < handle
             exportButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Export Data',...
                 'Units', 'normalized',...
-                'Position', [0 0 .2 1],...
+                'Position', [0 .33 .6 .33],...
                 'Callback', @ri.exportButton_callback);
             
             importButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Import Data',...
                 'Units', 'normalized',...
-                'Position', [.2 0 .2 1],...
+                'Position', [0 .66 .6 .33],...
                 'Callback', @ri.importButton_callback);
             
             clearButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Clear Data',...
                 'Units', 'normalized',...
-                'Position', [.4 0 .2 1],...
+                'Position', [0 0 .6 .33],...
                 'Callback', @ri.clearButton_callback);
             
             filenamePrompt = uicontrol(importExportGroup, 'Style', 'text',...
-                'String', 'Type the name of the file below',...
+                'String', 'Type the name of the external data file below',...
                 'Units', 'normalized',...
-                'Position', [.6 .5 .4 .5]);
+                'Position', [.6 .33 .4 .66]);
             ri.filenameTextbox = uicontrol(importExportGroup, 'Style', 'edit',...
                 'String', 'test',...
                 'Units', 'normalized',...
-                'Position', [.6 0 .4 .5]);
+                'Position', [.6 0 .4 .33]);
         end
         
     end
