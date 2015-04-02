@@ -14,6 +14,7 @@ classdef RoverInterface < handle
         tiltLabel
         degreeEntry
         roverMap
+        port
     end
     methods
         %constructor
@@ -33,6 +34,9 @@ classdef RoverInterface < handle
 
             %create instance of the simulator
             ri.simulator = Simulator;
+            
+            %create serial port reciever
+            ri.port = SerialCom('Serial-COM6');
             
             %timer to update GUI
             ri.updateGUITimer = timer;
@@ -141,7 +145,7 @@ classdef RoverInterface < handle
             cla(ri.tiltPlot)
         end
         function updateGUI_callback(~, ~, ri)
-            fprintf('Updating GUI...\n');
+            %fprintf('Updating GUI...\n');
             %update all 6 plots
             plot(ri.leftIRSensorPlot, ri.simulator.leftIRSensorData, 'b')
             ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
@@ -169,12 +173,14 @@ classdef RoverInterface < handle
             end        
             
         end
-        
+        %when the window is closed
         function on_close(~, ~, ri)
-            fprintf('Stopping GUI timer...\n');
+            fprintf('Getting rid of open ports and timers...\n');
             stop(ri.updateGUITimer);
             stopSimulateDataTimer(ri.simulator);
+            closePort(ri.port);
             delete(gcf);
+            
         end
         
     end
@@ -213,11 +219,12 @@ classdef RoverInterface < handle
 
             
         end
-        
+        %init the map from the map class
         function initMap(ri)
             mapPanel = uipanel('Title', 'Rover Map', 'Position', [.6 0 .4 1]);
             
             ri.roverMap = RoverMap(mapPanel);
+            drawSimRover(ri.roverMap, 1, 1, 30);
         end
         
         function initControlButtons(ri)
