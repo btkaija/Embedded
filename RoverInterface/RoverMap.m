@@ -34,7 +34,7 @@ classdef RoverMap < handle
             
             %error checking for limits of map
             if (xpos < 0.6 || xpos > 5.4)
-                fprintf('Rover beyond wall, not possible!')
+                fprintf('Rover beyond wall, not possible!\n')
                 return
             end
             
@@ -53,7 +53,7 @@ classdef RoverMap < handle
             y3 = m*sin((2*pi)*((angle+180)/360));
             y4 = m*sin((2*pi)*((angle+270)/360));
             
-            hold all
+            hold (this.mapAxes, 'on')
             
             drawWalls(this)
             %plot rover body
@@ -69,7 +69,7 @@ classdef RoverMap < handle
             
             %TODO draw sensor values
             
-            hold off
+            hold (this.mapAxes, 'off')
         end
         
         %Draws the walls on the map
@@ -82,6 +82,11 @@ classdef RoverMap < handle
             plot(this.mapAxes, [2 2], [2 12], 'k--')
             %right lane
             plot(this.mapAxes, [4 4], [2 12], 'k--')
+        end
+        
+        %get axes
+        function axes = getAxes(this)
+            axes = this.mapAxes;
         end
     end
     methods(Static)

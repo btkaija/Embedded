@@ -36,7 +36,7 @@ classdef RoverInterface < handle
             ri.simulator = Simulator;
             
             %create serial port reciever
-            ri.port = SerialCom('Serial-COM6');
+            %ri.port = SerialCom('Serial-COM6');
             
             %timer to update GUI
             ri.updateGUITimer = timer;
@@ -45,7 +45,7 @@ classdef RoverInterface < handle
             ri.updateGUITimer.Period = 1;
             ri.updateGUITimer.ExecutionMode = 'fixedRate';
             start(ri.updateGUITimer)
-            
+            fprintf('timer started\n')
             %init GUI
             initOptionButtons(ri);
             initControlButtons(ri);
@@ -145,7 +145,7 @@ classdef RoverInterface < handle
             cla(ri.tiltPlot)
         end
         function updateGUI_callback(~, ~, ri)
-            %fprintf('Updating GUI...\n');
+            fprintf('Updating GUI...\n');
             %update all 6 plots
             plot(ri.leftIRSensorPlot, ri.simulator.leftIRSensorData, 'b')
             ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
@@ -170,7 +170,18 @@ classdef RoverInterface < handle
                 %update label
                 ri.tiltLabel.String = strcat('The angle of the rover is  ',...
                     num2str(slope*50), ' degrees');
-            end        
+                
+                %plot new rover
+                hold all
+                cla(getAxes(ri.roverMap))
+                drawWalls(ri.roverMap)
+                drawSimRover(ri.roverMap, rand(1,1)*4+2, rand(1,1)*8+2, slope*50)
+                hold off
+            end
+            
+           
+            
+            fprintf('end GUI update...\n')
             
         end
         %when the window is closed
@@ -178,7 +189,7 @@ classdef RoverInterface < handle
             fprintf('Getting rid of open ports and timers...\n');
             stop(ri.updateGUITimer);
             stopSimulateDataTimer(ri.simulator);
-            closePort(ri.port);
+            %closePort(ri.port);
             delete(gcf);
             
         end
