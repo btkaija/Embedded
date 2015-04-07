@@ -147,9 +147,11 @@ classdef RoverInterface < handle
         function updateGUI_callback(~, ~, ri)
             fprintf('Updating GUI...\n');
             %update all 6 plots
-           
-            plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'sim'), 'b')
-            ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
+            getLIRSData(ri.db, 'sim');
+            x = [1:ri.db.dataLen];
+            plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'sim'))
+            %plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'real'), 'r')
+            %ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
 %             plot(ri.rightIRSensorPlot, ri.db.getRIRSData('sim'), 'b')
 %             ri.rightIRSensorPlot.Title.String = 'Right IR Sensor';
 %             plot(ri.leftUSSensorPlot, ri.db.getLUSSData('sim'), 'b')

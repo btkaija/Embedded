@@ -13,7 +13,7 @@ classdef Simulator < handle
         end
         
         
-        %this function starts the timer
+        %this function (re)creates and starts the timer
         function startSimulateDataTimer(this)
             
             this.simulateDataTimer = timer;
@@ -38,15 +38,26 @@ classdef Simulator < handle
             end
         end
         
+        function updateTest(this)
+            %TEMP: generating and adding random data
+            newData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandTilt()];
+             appendData(this.db, newData, 'sim')
+             %END TEMP
+        end
+        
    end
    methods (Static)
+       
        %callback function for the timer simulator
         function simulateDataTimer_callback(~, ~, this)
             %TODO: implement real simulations
-          fprintf('Simulating data...\n');
-             r = Simulator.simulateRandData();
-             newData = [getLIRSData(this.db, 'sim') r];
-             setLIRSData(this.db, newData, 'sim')
+            fprintf('Simulating data...\n');
+            
+            updateTest(this)
+           
             
         end
         %simulates random data
@@ -54,7 +65,7 @@ classdef Simulator < handle
             randData = rand(1, 1)*100;
         end
         
-        %generate random tilt slope
+        %generate random tilt slope between -1 and 1
         function randTilt = simulateRandTilt()
             randTilt = rand(1,1);
             if rand(1,1) > .5
