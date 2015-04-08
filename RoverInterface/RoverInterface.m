@@ -3,7 +3,10 @@ classdef RoverInterface < handle
         simulator
         fig
         updateGUITimer
-        filenameTextbox
+        roverMap
+        port
+        db
+        %plots
         rightIRSensorPlot
         leftIRSensorPlot
         rightUSSensorPlot
@@ -11,10 +14,9 @@ classdef RoverInterface < handle
         leftMotorPlot
         rightMotorPlot
         tiltPlot
-        degreeEntry
-        roverMap
-        port
-        db
+        tiltAnglePlot
+        %entry boxes
+        degreeEntry 
     end
     methods
         %constructor
@@ -40,10 +42,7 @@ classdef RoverInterface < handle
             
             %create serial port reciever
             %ri.port = SerialCom('Serial-COM6');
-            
-            %timer to update GUI
-            startGUITimer(ri);
-            
+
             %init GUI
             initOptionButtons(ri);
             initControlButtons(ri);
@@ -52,71 +51,60 @@ classdef RoverInterface < handle
             
             ri.fig.Visible = 'on';
             
+            %timer to update GUI
+            startGUITimer(ri);
+            
         end
         
         %start simulator
         function startButton_callback(ri, ~, ~)
-            fprintf('Starting simulation...\n');
+            %fprintf('Starting simulation...\n');
             startSimulateDataTimer(ri.simulator);
         end
         %stop simulator
         function stopButton_callback(ri, ~, ~)
-            fprintf('Stopping simulation...\n');
+            %fprintf('Stopping simulation...\n');
             stopSimulateDataTimer(ri.simulator);
         end
         
+        %callback for when the export button is pressed
         function exportButton_callback(ri, ~, ~)
             fprintf('Exporting current data from plots...\n')
-%             filename = get(ri.filenameTextbox, 'String');
-%             filename = strcat(filename, '.dat');
-%             %put both sets of data together
-%             allData = [ri.simulator.leftIRSensorData,...
-%                 ri.simulator.rightIRSensorData,...
-%                 ri.simulator.leftUSSensorData,...
-%                 ri.simulator.rightUSSensorData,...
-%                 ri.simulator.leftMotorData,...
-%                 ri.simulator.rightMotorData,...
-%                 ri.simulator.tiltData];
-%             dlmwrite(filename, allData);
+            [file, path] = uiputfile('results.dat','Save as');
+            filepath = strcat(path, file);
+            allSimData = getAllData(ri.db, 'sim');
+            allRealData = getAllData(ri.db, 'real');
+            dlmwrite(filepath, [allSimData allRealData]);
             
         end
         
-        
+        %callback for when the import button is pressed
         function importButton_callback(ri, ~, ~)
-            ri.clearPlots(ri)
+            clearButton_callback(ri, 0, 0)
             fprintf('Importing new data to plots...\n')
-%             filename = get(ri.filenameTextbox, 'String');
-%             filename = strcat(filename, '.dat');
-%             allData = dlmread(filename);
-%             len = length(allData);
-%             %split data from file
-%             LIRSD = allData(1:len/7);
-%             RIRSD = allData((len/7)+1:(len/7)*2);
-%             LUSSD = allData((len/7)*2+1:(len/7)*3);
-%             RUSSD = allData((len/7)*3+1:(len/7)*4);
-%             LMD = allData((len/7)*4+1:(len/7)*5);
-%             RMD = allData((len/7)*5+1:(len/7)*6); 
-%             TD = allData((len/7)*6+1:len);
-%             %update simulator storage
-%             setLeftIRSensorData(ri.simulator, LIRSD)
-%             setRightIRSensorData(ri.simulator, RIRSD)
-%             setLeftUSSensorData(ri.simulator, LUSSD)
-%             setRightUSSensorData(ri.simulator, RUSSD)
-%             setLeftMotorData(ri.simulator, LMD)
-%             setRightMotorData(ri.simulator, RMD)
-%             setTiltData(ri.simulator, TD)
+            [file, path] = uigetfile('*.dat', 'Select the rover data file');
+            filepath = strcat(path, file);
+            allData = dlmread(filepath);
+            l = length(allData);
+            allSimData = allData(1:l/2);
+            setAllData(ri.db, allSimData, 'sim');
+            allRealData = allData(l/2 +1:l);
+            setAllData(ri.db, allRealData, 'real');
+
         end
         
+        %callback for when the clear button is pressed
         function clearButton_callback(ri, ~, ~)
             fprintf('Clearing current data from plots...\n')
-            setLeftIRSensorData(ri.simulator, [])
-            setRightIRSensorData(ri.simulator, [])
-            setLeftUSSensorData(ri.simulator, [])
-            setRightUSSensorData(ri.simulator, [])
-            setLeftMotorData(ri.simulator, [])
-            setRightMotorData(ri.simulator, [])
-            setTiltData(ri.simulator, [])
-            ri.clearPlots(ri)
+            setAllData(ri.db, [0 0 0 0 0 0 0], 'sim')
+            setAllData(ri.db, [0 0 0 0 0 0 0], 'real')
+            cla(ri.leftIRSensorPlot)
+            cla(ri.rightIRSensorPlot)
+            cla(ri.leftUSSensorPlot)
+            cla(ri.rightUSSensorPlot)
+            cla(ri.rightMotorPlot)
+            cla(ri.leftMotorPlot)
+            cla(ri.tiltPlot)
         end
         
         function traverseButton_callback(ri, ~, ~)
@@ -135,55 +123,83 @@ classdef RoverInterface < handle
     end
     %static callbacks
     methods (Static)
-        function clearPlots(ri)
-            cla(ri.leftIRSensorPlot)
-            cla(ri.rightIRSensorPlot)
-            cla(ri.leftUSSensorPlot)
-            cla(ri.rightUSSensorPlot)
-            cla(ri.rightMotorPlot)
-            cla(ri.leftMotorPlot)
-            cla(ri.tiltPlot)
-        end
+
         function updateGUI_callback(~, ~, ri)
-            fprintf('Updating GUI...\n');
-            %update all 6 plots
-            getLIRSData(ri.db, 'sim');
-            x = [1:ri.db.dataLen];
-            plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'sim'))
-            %plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'real'), 'r')
-            %ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
-%             plot(ri.rightIRSensorPlot, ri.db.getRIRSData('sim'), 'b')
-%             ri.rightIRSensorPlot.Title.String = 'Right IR Sensor';
-%             plot(ri.leftUSSensorPlot, ri.db.getLUSSData('sim'), 'b')
-%             ri.leftUSSensorPlot.Title.String = 'Left US Sensor';
-%             plot(ri.rightUSSensorPlot, ri.db.getRUSSData('sim'), 'b')
-%             ri.rightUSSensorPlot.Title.String = 'Right US Sensor';
-%             plot(ri.rightMotorPlot, ri.db.getRMData('sim'), 'b')
-%             ri.rightMotorPlot.Title.String = 'Right Motor Encoder';
-%             plot(ri.leftMotorPlot, ri.db.getLMData('sim'), 'b')
-%             ri.leftMotorPlot.Title.String = 'Left Motor Encoder';
+            %fprintf('Updating GUI...\n');
             
-%             dataLen = length(ri.simulator.tiltData);
-%             if dataLen ~= 0
-%                 %get most recent tilt and display
-%                 slope = ri.simulator.tiltData(dataLen);
-%                 plot(ri.tiltPlot, [1, -1], [slope, slope*-1], 'b')
-%                 legend(ri.tiltPlot, 'XX degrees');
-%                 axis(ri.tiltPlot, [-1 1 -1 1])
-%                 ri.tiltPlot.Title.String = 'Tilt Angle';
-%                 %update label
-%                 ri.tiltLabel.String = strcat('The angle of the rover is  ',...
-%                     num2str(slope*50), ' degrees');
-%                 
-%                 %plot new rover
-%                 hold all
-%                 cla(getAxes(ri.roverMap))
-%                 drawWalls(ri.roverMap)
-%                 drawSimRover(ri.roverMap, rand(1,1)*4+2, rand(1,1)*8+2, slope*50)
-%                 hold off
-%             end
+            %Update all 6 plots with sim and real data
+            hold(ri.leftIRSensorPlot, 'on')
+            plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'sim'), 'b')
+            plot(ri.leftIRSensorPlot, getLIRSData(ri.db, 'real'), 'r')
+            ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
+            hold(ri.leftIRSensorPlot, 'off')
             
+            hold(ri.rightIRSensorPlot, 'on')
+            plot(ri.rightIRSensorPlot, getRIRSData(ri.db, 'sim'), 'b')
+            plot(ri.rightIRSensorPlot, getRIRSData(ri.db, 'real'), 'r')
+            ri.rightIRSensorPlot.Title.String = 'Right IR Sensor';
+            hold(ri.rightIRSensorPlot, 'off')
+            
+            hold(ri.leftUSSensorPlot, 'on')
+            plot(ri.leftUSSensorPlot, getLUSSData(ri.db, 'sim'), 'b')
+            plot(ri.leftUSSensorPlot, getLUSSData(ri.db, 'real'), 'r')
+            ri.leftUSSensorPlot.Title.String = 'Left US Sensor';
+            hold(ri.leftUSSensorPlot, 'off')
+            
+            hold(ri.rightUSSensorPlot, 'on')
+            plot(ri.rightUSSensorPlot, getRUSSData(ri.db, 'sim'), 'b')
+            plot(ri.rightUSSensorPlot, getRUSSData(ri.db, 'real'), 'r')
+            ri.rightUSSensorPlot.Title.String = 'Right US Sensor';
+            hold(ri.rightUSSensorPlot, 'off')
+            
+            hold(ri.rightMotorPlot, 'on')
+            plot(ri.rightMotorPlot, getRMData(ri.db, 'sim'), 'b')
+            plot(ri.rightMotorPlot, getRMData(ri.db, 'real'), 'r')
+            ri.rightMotorPlot.Title.String = 'Right Motor Encoder';
+            hold(ri.rightMotorPlot, 'off')
+            
+            hold(ri.leftMotorPlot, 'on')
+            plot(ri.leftMotorPlot, getLMData(ri.db, 'sim'), 'b')
+            plot(ri.leftMotorPlot, getLMData(ri.db, 'real'), 'r')
+            ri.leftMotorPlot.Title.String = 'Left Motor Encoder';
+            hold(ri.leftMotorPlot, 'off')
+
+            
+            %update tilt plots here
+            simSlope = getTiltData(ri.db, 'sim');
+            realSlope = getTiltData(ri.db, 'real');
+            
+            hold(ri.tiltPlot, 'on')
+            plot(ri.tiltPlot, simSlope, 'b')
+            plot(ri.tiltPlot, realSlope, 'r')
+            ri.tiltPlot.Title.String = 'Tilt';
+            hold(ri.tiltPlot, 'off')
+            
+            %most recent slopes
+            ss = simSlope(length(simSlope));
+            rs = realSlope(length(realSlope));
+            legendNames = cell(1,2);
+            legendNames{1} = strcat(num2str(ss*45), ' degrees');
+            legendNames{2} = strcat(num2str(rs*45), ' degrees');
+            
+            cla(ri.tiltAnglePlot);
+            
+            hold(ri.tiltAnglePlot, 'on')
+            plot(ri.tiltAnglePlot, [-1 1], [ss*-1, ss], 'b')
+            plot(ri.tiltAnglePlot, [-1 1], [rs*-1, rs], 'r')
+            legend(ri.tiltAnglePlot, legendNames)
+            axis(ri.tiltAnglePlot, [-1 1 -1 1])
+            ri.tiltAnglePlot.Title.String = 'Tilt Angle';
+            hold(ri.tiltAnglePlot, 'off')
+            
+            %plot new rover
+%             hold all
+%             cla(getAxes(ri.roverMap))
+%             drawWalls(ri.roverMap)
+%             drawSimRover(ri.roverMap, rand(1,1)*4+2, rand(1,1)*8+2, slope*50)
+%             hold off
         end
+        
         %when the window is closed
         function on_close(~, ~, ri)
             fprintf('Getting rid of open ports and timers...\n');
@@ -222,10 +238,11 @@ classdef RoverInterface < handle
             ri.rightMotorPlot.Title.String = 'Right Motor Encoder';
             
             ri.tiltPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 0 1 .25]);
-            ri.tiltPlot.Title.String = 'Tilt Angle';
-            
-
+                'OuterPosition', [0 0 .5 .25]);
+            ri.tiltPlot.Title.String = 'Tilt';
+            ri.tiltAnglePlot = axes('Parent', dataPanel,...
+                'OuterPosition', [.5 0 .5 .25]);
+            ri.tiltAnglePlot.Title.String = 'Tilt Angle';
             
         end
         %init the map from the map class
@@ -233,7 +250,11 @@ classdef RoverInterface < handle
             mapPanel = uipanel('Title', 'Rover Map', 'Position', [.6 0 .4 1]);
             
             ri.roverMap = RoverMap(mapPanel);
-            drawSimRover(ri.roverMap, 1, 1, 30);
+            %drawing da stuff
+            hold(getAxes(ri.roverMap), 'on')
+            drawWalls(ri.roverMap);
+            drawSimRover(ri.roverMap, 1, 1, 45, 'sim');
+            hold(getAxes(ri.roverMap), 'off')
         end
         
         function initControlButtons(ri)
@@ -300,29 +321,20 @@ classdef RoverInterface < handle
             exportButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Export Data',...
                 'Units', 'normalized',...
-                'Position', [0 .33 .6 .33],...
+                'Position', [.25 .33 .5 .33],...
                 'Callback', @ri.exportButton_callback);
             
             importButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Import Data',...
                 'Units', 'normalized',...
-                'Position', [0 .66 .6 .33],...
+                'Position', [.25 .66 .5 .33],...
                 'Callback', @ri.importButton_callback);
             
             clearButton = uicontrol(importExportGroup, 'Style', 'pushbutton',...
                 'String', 'Clear Data',...
                 'Units', 'normalized',...
-                'Position', [0 0 .6 .33],...
+                'Position', [.25 0 .5 .33],...
                 'Callback', @ri.clearButton_callback);
-            
-            filenamePrompt = uicontrol(importExportGroup, 'Style', 'text',...
-                'String', 'Type the name of the external data file below',...
-                'Units', 'normalized',...
-                'Position', [.6 .33 .4 .66]);
-            ri.filenameTextbox = uicontrol(importExportGroup, 'Style', 'edit',...
-                'String', 'test',...
-                'Units', 'normalized',...
-                'Position', [.6 0 .4 .33]);
         end
         
         %starts the timer for the gui update

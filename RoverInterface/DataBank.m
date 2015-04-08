@@ -231,77 +231,41 @@ classdef DataBank < handle
         %append data for all types
         %must be an array of data that has a multiple of 7 data points
         %formatted as: [LIR, RIR, LUS, RUS, LM, RM, T]
-        %this is the primary way to add data to the plots
-        function appendData(this, newData, type)
-            if mod(length(newData), 7) ~= 0
-                fprintf('ERROR: Appended data should be multiple of 7\n');
+        %this is the primary way to add data to the data bank
+        function appendData(this, newSimData, newRealData)
+            totalPoints = length(newSimData);
+            numPoints = totalPoints/7;
+            %check all data can be added to data bank
+            if mod(totalPoints, 7) ~= 0
+                fprintf('ERROR: Appended data should be multiple of seven.\n');
                 return
             end
-            numPoints = length(newData/7);
-            
-            
-            if strcmp(type, 'real')
-                %left IR sensor
-                this.realData = [this.realData(this.dataLen*0+1:this.dataLen*1),...
-                    newData(numPoints*0+1:numPoints*1),...
-                    this.realData(this.dataLen*1+1:this.dataLen*7)];
-                %right IR sensor
-                this.realData = [this.realData(this.dataLen*1+1:this.dataLen*2),...
-                    newData(numPoints*1+1:numPoints*2),...
-                    this.realData(this.dataLen*2+1:this.dataLen*7)];
-                %left US sensor
-                this.realData = [this.realData(this.dataLen*2+1:this.dataLen*3),...
-                    newData(numPoints*2+1:numPoints*3),...
-                    this.realData(this.dataLen*3+1:this.dataLen*7)];
-                %right US sensor
-                this.realData = [this.realData(this.dataLen*3+1:this.dataLen*4),...
-                    newData(numPoints*3+1:numPoints*4),...
-                    this.realData(this.dataLen*4+1:this.dataLen*7)];
-                %left motor
-                this.realData = [this.realData(this.dataLen*4+1:this.dataLen*5),...
-                    newData(numPoints*4+1:numPoints*5),...
-                    this.realData(this.dataLen*5+1:this.dataLen*7)];
-                %right motor
-                this.realData = [this.realData(this.dataLen*5+1:this.dataLen*6),...
-                    newData(numPoints*5+1:numPoints*6),...
-                    this.realData(this.dataLen*6+1:this.dataLen*7)];
-                %tilt data
-                this.realData = [this.realData(this.dataLen*6+1:this.dataLen*7),...
-                    newData(numPoints*6+1:numPoints*7)];
-            elseif strcmp(type, 'sim')
-                %left IR sensor
-                this.simData = [this.simData(this.dataLen*0+1:this.dataLen*1),...
-                    newData(numPoints*0+1:numPoints*1),...
-                    this.simData(this.dataLen*1+1:this.dataLen*7)];
-                %right IR sensor
-                this.simData = [this.simData(this.dataLen*1+1:this.dataLen*2),...
-                    newData(numPoints*1+1:numPoints*2),...
-                    this.simData(this.dataLen*2+1:this.dataLen*7)];
-                %left US sensor
-                this.simData = [this.simData(this.dataLen*2+1:this.dataLen*3),...
-                    newData(numPoints*2+1:numPoints*3),...
-                    this.simData(this.dataLen*3+1:this.dataLen*7)];
-                %right US sensor
-                this.simData = [this.simData(this.dataLen*3+1:this.dataLen*4),...
-                    newData(numPoints*3+1:numPoints*4),...
-                    this.simData(this.dataLen*4+1:this.dataLen*7)];
-                %left motor
-                this.simData = [this.simData(this.dataLen*4+1:this.dataLen*5),...
-                    newData(numPoints*4+1:numPoints*5),...
-                    this.simData(this.dataLen*5+1:this.dataLen*7)];
-                %right motor
-                this.simData = [this.simData(this.dataLen*5+1:this.dataLen*6),...
-                    newData(numPoints*5+1:numPoints*6),...
-                    this.simData(this.dataLen*6+1:this.dataLen*7)];
-                %tilt data
-                this.simData = [this.simData(this.dataLen*6+1:this.dataLen*7),...
-                    newData(numPoints*6+1:numPoints*7)];
-            else
-                fprintf('Specify either real or sim data\n');
+            %check sets are the same
+            if length(newRealData) ~= totalPoints
+                fprintf('ERROR: Simulated and Real datasets do not match in length.\n');
+                return
             end
-            %update lengths of data
+            %add that shizzle!
+            for i = 1:1:7
+                pos = i*(this.dataLen + 1);
+                
+                %insert new  real data
+                this.realData = ...
+                    [this.realData(1:pos-1),...
+                    newRealData((i-1)*numPoints+1:numPoints*i),...
+                    this.realData(pos:this.totalLen)];
+
+                %insert new sim data
+                this.simData = ...
+                    [this.simData(1:pos-1),...
+                    newSimData((i-1)*numPoints+1:numPoints*i),...
+                    this.simData(pos:this.totalLen)];
+                
+                this.totalLen = this.totalLen + numPoints;
+            end
+            
+            %update length of data collections
             this.dataLen = numPoints + this.dataLen;
-            this.totalLen = this.dataLen*7;
         end
         
     end

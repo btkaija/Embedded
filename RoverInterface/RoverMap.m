@@ -7,11 +7,10 @@ classdef RoverMap < handle
         simRoverYpos
         simRoverAngle
         
+        realRoverXpos
+        realRoverYpos
+        realRoverAngle
         
-        simLeftIRpos
-        simRightIRpos
-        simLeftUSpos
-        simRightUSpos
     end
     methods
         function this = RoverMap(parentPanel)
@@ -30,17 +29,27 @@ classdef RoverMap < handle
         %Error checking for the limits of the map
         %the position of the rover is the center of the rover
         %the angle is in degrees
-        function drawSimRover(this, xpos, ypos, angle)
+        function drawSimRover(this, xpos, ypos, angle, type)
             
             %error checking for limits of map
             if (xpos < 0.6 || xpos > 5.4)
                 fprintf('Rover beyond wall, not possible!\n')
                 return
             end
-            
-            this.simRoverXpos = xpos;
-            this.simRoverYpos = ypos;
-            this.simRoverAngle = angle;
+            if strcmp(type, 'sim')
+                this.simRoverXpos = xpos;
+                this.simRoverYpos = ypos;
+                this.simRoverAngle = angle;
+                color = 'b';
+            elseif strcmp(type, 'real')
+                this.realRoverXpos = xpos;
+                this.realRoverYpos = ypos;
+                this.realRoverAngle = angle;
+                color = 'r';
+            else
+                fprintf('Specify which type of rover should be drawn!\n')
+                return
+            end
             %update plot here
             
             m = 0.5*sqrt(2);
@@ -58,14 +67,14 @@ classdef RoverMap < handle
             drawWalls(this)
             %plot rover body
              plot(this.mapAxes, [xpos+x1, xpos+x2, xpos+x3, xpos+x4, xpos+x1],...
-                [ypos+y1, ypos+y2, ypos+y3, ypos+y4, ypos+y1], 'b')
+                [ypos+y1, ypos+y2, ypos+y3, ypos+y4, ypos+y1], color)
             %plot directional arrow
             plot(this.mapAxes, [xpos, xpos+0.5*cos(2*pi*(45+angle)/360)],...
-                [ypos, ypos+0.5*sin(2*pi*(45+angle)/360)], 'b')
+                [ypos, ypos+0.5*sin(2*pi*(45+angle)/360)], color)
             plot(this.mapAxes, [xpos+0.4*cos(2*pi*(55+angle)/360), xpos+0.5*cos(2*pi*(45+angle)/360)],...
-                [ypos+0.4*sin(2*pi*(55+angle)/360), ypos+0.5*sin(2*pi*(45+angle)/360)], 'b')
+                [ypos+0.4*sin(2*pi*(55+angle)/360), ypos+0.5*sin(2*pi*(45+angle)/360)], color)
             plot(this.mapAxes, [xpos+0.4*cos(2*pi*(35+angle)/360), xpos+0.5*cos(2*pi*(45+angle)/360)],...
-                [ypos+0.4*sin(2*pi*(35+angle)/360), ypos+0.5*sin(2*pi*(45+angle)/360)], 'b')
+                [ypos+0.4*sin(2*pi*(35+angle)/360), ypos+0.5*sin(2*pi*(45+angle)/360)], color)
             
             %TODO draw sensor values
             
@@ -82,6 +91,14 @@ classdef RoverMap < handle
             plot(this.mapAxes, [2 2], [2 12], 'k--')
             %right lane
             plot(this.mapAxes, [4 4], [2 12], 'k--')
+            %tile lines
+            plot(this.mapAxes, [0 6], [12 12], 'k--')
+            plot(this.mapAxes, [0 6], [10 10], 'k--')
+            plot(this.mapAxes, [0 6], [8 8], 'k--')
+            plot(this.mapAxes, [0 6], [6 6], 'k--')
+            plot(this.mapAxes, [0 6], [4 4], 'k--')
+            plot(this.mapAxes, [0 6], [2 2], 'k--')
+            
         end
         
         %get axes

@@ -6,16 +6,16 @@ classdef Simulator < handle
    end
    
    methods
+       
+        %constructor
         function this = Simulator(dataBase)
             this.db = dataBase;
-            
-            
         end
         
         
         %this function (re)creates and starts the timer
         function startSimulateDataTimer(this)
-            
+            fprintf('Starting simulateDataTimer...\n')
             this.simulateDataTimer = timer;
             this.simulateDataTimer.BusyMode = 'drop';
             this.simulateDataTimer.TimerFcn = {@Simulator.simulateDataTimer_callback, this};
@@ -30,23 +30,14 @@ classdef Simulator < handle
         %this function stops the timer
         function stopSimulateDataTimer(obj)
             try
-                fprintf('Stopping sim timer...\n');
+                fprintf('Stopping simulateDataTimer...\n');
                 stop(obj.simulateDataTimer);
                 delete(obj.simulateDataTimer);
             catch
-                fprintf('Error stoping timer: simulateDataTimer does not exist\n');    
+                fprintf('Warning: simulateDataTimer does not exist.\n');    
             end
         end
         
-        function updateTest(this)
-            %TEMP: generating and adding random data
-            newData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandTilt()];
-             appendData(this.db, newData, 'sim')
-             %END TEMP
-        end
         
    end
    methods (Static)
@@ -55,10 +46,18 @@ classdef Simulator < handle
         function simulateDataTimer_callback(~, ~, this)
             %TODO: implement real simulations
             fprintf('Simulating data...\n');
-            
-            updateTest(this)
-           
-            
+            %TEMP: generating and adding random data
+            newData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandTilt()];
+            newData1 = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandTilt()];
+            appendData(this.db, newData, newData1)
+            %END TEMP
+                       
         end
         %simulates random data
         function randData = simulateRandData()
