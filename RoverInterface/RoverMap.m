@@ -26,16 +26,20 @@ classdef RoverMap < handle
         end
         
         %Draws the rover on the map at the specified position
+        %and sets the x, y and angle values at the same time
         %Error checking for the limits of the map
         %the position of the rover is the center of the rover
-        %the angle is in degrees
-        function drawSimRover(this, xpos, ypos, angle, type)
+        %the angle is in degrees and relative to the x and y axis
+        function drawRover(this, xpos, ypos, angle, type)
             
             %error checking for limits of map
             if (xpos < 0.6 || xpos > 5.4)
                 fprintf('Rover beyond wall, not possible!\n')
                 return
             end
+            %offset to make input angles understandable
+            angle = angle-45;
+            %store
             if strcmp(type, 'sim')
                 this.simRoverXpos = xpos;
                 this.simRoverYpos = ypos;

@@ -3,13 +3,17 @@ classdef Simulator < handle
    properties
        simulateDataTimer
        db
+       isOn
+       port
    end
    
    methods
        
         %constructor
-        function this = Simulator(dataBase)
+        function this = Simulator(dataBase, serial)
+            this.port = serial;
             this.db = dataBase;
+            this.isOn = 0;
         end
         
         
@@ -24,6 +28,7 @@ classdef Simulator < handle
             this.simulateDataTimer.Name = 'SIM-timer';
             
             start(this.simulateDataTimer)
+            this.isOn = 1;
         end
         
         
@@ -33,11 +38,15 @@ classdef Simulator < handle
                 fprintf('Stopping simulateDataTimer...\n');
                 stop(obj.simulateDataTimer);
                 delete(obj.simulateDataTimer);
+                obj.isOn = 0;
             catch
                 fprintf('Warning: simulateDataTimer does not exist.\n');    
             end
         end
         
+        function data = simulateData(this)
+            %simulate the data using DB
+        end
         
    end
    methods (Static)
@@ -47,15 +56,15 @@ classdef Simulator < handle
             %TODO: implement real simulations
             fprintf('Simulating data...\n');
             %TEMP: generating and adding random data
-            newData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
+            newSimData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
                 Simulator.simulateRandData(), Simulator.simulateRandData(),...
                 Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandTilt()];
-            newData1 = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
+                Simulator.simulateRandTilt(), 1, 1 , 90];
+            newRealData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
                 Simulator.simulateRandData(), Simulator.simulateRandData(),...
                 Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandTilt()];
-            appendData(this.db, newData, newData1)
+                Simulator.simulateRandTilt(), 2, 2, 90];
+            appendData(this.db, newSimData, newRealData)
             %END TEMP
                        
         end

@@ -1,5 +1,6 @@
 classdef RoverInterface < handle
     properties
+        %objects
         simulator
         fig
         updateGUITimer
@@ -16,7 +17,14 @@ classdef RoverInterface < handle
         tiltPlot
         tiltAnglePlot
         %entry boxes
-        degreeEntry 
+        degreeEntry
+        forwardEntry
+        reverseEntry
+        %radio buttons
+        controlSim
+        controlReal
+        uturnrightToggle
+        uturnleftToggle
     end
     methods
         %constructor
@@ -38,11 +46,12 @@ classdef RoverInterface < handle
             ri.db = DataBank();
             
             %create instance of the simulator
-            ri.simulator = Simulator(ri.db);
+            ri.simulator = Simulator(ri.db, ri.port);
             
             %create serial port reciever
-            %ri.port = SerialCom('Serial-COM6');
-
+            ri.port = SerialCom('Serial-COM1', ri.simulator, ri.db);
+            
+            
             %init GUI
             initOptionButtons(ri);
             initControlButtons(ri);
@@ -52,8 +61,7 @@ classdef RoverInterface < handle
             ri.fig.Visible = 'on';
             
             %timer to update GUI
-            startGUITimer(ri);
-            
+            startGUITimer(ri);      
         end
         
         %start simulator
@@ -71,10 +79,13 @@ classdef RoverInterface < handle
         function exportButton_callback(ri, ~, ~)
             fprintf('Exporting current data from plots...\n')
             [file, path] = uiputfile('results.dat','Save as');
-            filepath = strcat(path, file);
-            allSimData = getAllData(ri.db, 'sim');
-            allRealData = getAllData(ri.db, 'real');
-            dlmwrite(filepath, [allSimData allRealData]);
+            
+            if file~=0 && path~=0
+                filepath = strcat(path, file);
+                allSimData = getAllData(ri.db, 'sim');
+                allRealData = getAllData(ri.db, 'real');
+                dlmwrite(filepath, [allSimData allRealData]);
+            end
             
         end
         
@@ -83,21 +94,24 @@ classdef RoverInterface < handle
             clearButton_callback(ri, 0, 0)
             fprintf('Importing new data to plots...\n')
             [file, path] = uigetfile('*.dat', 'Select the rover data file');
-            filepath = strcat(path, file);
-            allData = dlmread(filepath);
-            l = length(allData);
-            allSimData = allData(1:l/2);
-            setAllData(ri.db, allSimData, 'sim');
-            allRealData = allData(l/2 +1:l);
-            setAllData(ri.db, allRealData, 'real');
+            
+            if file~=0 && path~=0
+                filepath = strcat(path, file);
+                allData = dlmread(filepath);
+                l = length(allData);
+                allSimData = allData(1:l/2);
+                setAllData(ri.db, allSimData, 'sim');
+                allRealData = allData(l/2 +1:l);
+                setAllData(ri.db, allRealData, 'real');
+            end
 
         end
         
         %callback for when the clear button is pressed
         function clearButton_callback(ri, ~, ~)
             fprintf('Clearing current data from plots...\n')
-            setAllData(ri.db, [0 0 0 0 0 0 0], 'sim')
-            setAllData(ri.db, [0 0 0 0 0 0 0], 'real')
+            setAllData(ri.db, zeros(1,10), 'sim')
+            setAllData(ri.db, zeros(1,10), 'real')
             cla(ri.leftIRSensorPlot)
             cla(ri.rightIRSensorPlot)
             cla(ri.leftUSSensorPlot)
@@ -107,16 +121,51 @@ classdef RoverInterface < handle
             cla(ri.tiltPlot)
         end
         
+        %asks the rover to begin rover automation
         function traverseButton_callback(ri, ~, ~)
-            fprintf('traverse\n');
+            fprintf('Traverse button.\n');
+            %should not work for sim rover
+            startAutomator(ri.port);
         end
         
         function haltButton_callback(ri, ~, ~)
-            fprintf('halt\n');
+            fprintf('Halt button.\n');
+            stopAutomator(ri.port);
+            %should not work for for sim rover
         end
         
+        %asks the rover to turn XX number of degrees
         function turnButton_callback(ri, ~, ~)
-            fprintf('turn\n');
+            val = ri.degreeEntry.String;
+            angle = 0;
+            try
+               angle = str2double(val);
+            catch
+                fprintf('The angle input is not a number');
+            end
+            fprintf(['Turn ',num2str(angle), ' degrees \n']);
+            
+            if ri.controlReal.Value
+                %move real rover
+                %send command
+            elseif ri.controlSim.Value
+                %stop sim
+                %move sim rover
+            else
+                fprintf('Select which rover to control.\n');
+            end
+        end
+        
+        function forwardButton_callback(ri, ~, ~)
+            fprintf('Forward button.\n');
+        end
+        
+        function reverseButton_callback(ri, ~, ~)
+            fprintf('Reverse button.\n');
+        end
+        
+        function uturnButton_callback(ri, ~, ~)
+            fprintf('U-Turn button.\n')
         end
         
         
@@ -192,12 +241,22 @@ classdef RoverInterface < handle
             ri.tiltAnglePlot.Title.String = 'Tilt Angle';
             hold(ri.tiltAnglePlot, 'off')
             
-            %plot new rover
-%             hold all
-%             cla(getAxes(ri.roverMap))
-%             drawWalls(ri.roverMap)
-%             drawSimRover(ri.roverMap, rand(1,1)*4+2, rand(1,1)*8+2, slope*50)
-%             hold off
+            %plot rovers
+
+            dl = getDataLength(ri.db);
+            simXpos = getXposData(ri.db, 'sim');
+            simYpos = getYposData(ri.db, 'sim');
+            simAngle = getAngleData(ri.db, 'sim');
+            realXpos = getXposData(ri.db, 'real');
+            realYpos = getYposData(ri.db, 'real');
+            realAngle = getAngleData(ri.db, 'real');
+            
+            hold(getAxes(ri.roverMap), 'on')
+            cla(getAxes(ri.roverMap));
+            drawWalls(ri.roverMap)
+            drawRover(ri.roverMap, simXpos(dl), simYpos(dl), simAngle(dl), 'sim')
+            drawRover(ri.roverMap, realXpos(dl), realYpos(dl), realAngle(dl), 'real')
+            hold(getAxes(ri.roverMap), 'off')
         end
         
         %when the window is closed
@@ -206,7 +265,7 @@ classdef RoverInterface < handle
             stop(ri.updateGUITimer);
             delete(ri.updateGUITimer);
             stopSimulateDataTimer(ri.simulator);
-            %closePort(ri.port);
+            closePort(ri.port);
             delete(gcf);
             
         end
@@ -253,15 +312,29 @@ classdef RoverInterface < handle
             %drawing da stuff
             hold(getAxes(ri.roverMap), 'on')
             drawWalls(ri.roverMap);
-            drawSimRover(ri.roverMap, 1, 1, 45, 'sim');
+            drawRover(ri.roverMap, 1, 1, 1, 'sim');
             hold(getAxes(ri.roverMap), 'off')
         end
         
         function initControlButtons(ri)
             controlPanel = uipanel('Title', 'Rover Controls', 'Position', [0, 0, .2, .5]);
             
-            autoPanel = uipanel(controlPanel, 'Position', [0 .85 1 .15]);
-            commandPanel = uipanel(controlPanel, 'Position', [0 0 1 .85]);
+            modePanel = uipanel(controlPanel, 'Position', [0 .85 1 .15]);
+            autoPanel = uipanel(controlPanel, 'Position', [0 .7 1 .15]);
+            commandPanel = uipanel(controlPanel, 'Position', [0 0 1 .7]);
+            
+            modeButtonGroup = uibuttongroup(modePanel,...
+                'Position', [0 0 1 1]);
+            
+            ri.controlSim = uicontrol(modeButtonGroup,...
+                'Style', 'radiobutton', 'String', 'Control Simulated Rover',...
+                'Units', 'normalized',...
+                'Position', [0 .5 1 .5]);
+            
+            ri.controlReal = uicontrol(modeButtonGroup,...
+                'Style', 'radiobutton', 'String', 'Control Real Rover',...
+                'Units', 'normalized',...
+                'Position', [0 0 1 .5]);
             
             traverseButton = uicontrol(autoPanel, 'Style', 'pushbutton',...
                 'String', 'Traverse Course',...
@@ -278,24 +351,55 @@ classdef RoverInterface < handle
             turnButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
                 'String', 'Turn X Degrees',...
                 'Units', 'normalized',...
-                'Position', [0 .9 .5 .1],...
+                'Position', [0 .8 .5 .2],...
                 'Callback', @ri.turnButton_callback);
             
             ri.degreeEntry = uicontrol(commandPanel, 'Style', 'edit',...
                 'String', '45',...
                 'Units', 'normalized',...
-                'Position', [.5 .9 .5 .1]);
-            %TODO: implement buttons
-            %turnButton
-            %ri.degreeEntry
-            %forwardButton
-            %ri.fdistEntry
-            %reverseButton
-            %ri.rdistEntry
-            %uturnButton
-            %ri.uturnrightToggle
-            %ri.uturnleftToggle
-            %uturnButtongroup
+                'Position', [.5 .8 .5 .2]);
+            
+            forwardButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Move Forward X cm',...
+                'Units', 'normalized',...
+                'Position', [0 .6 .5 .2],...
+                'Callback', @ri.forwardButton_callback);
+            
+            ri.forwardEntry = uicontrol(commandPanel, 'Style', 'edit',...
+                'String', '20',...
+                'Units', 'normalized',...
+                'Position', [.5 .6 .5 .2]);
+            
+            reverseButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Move Backward X cm',...
+                'Units', 'normalized',...
+                'Position', [0 .4 .5 .2],...
+                'Callback', @ri.reverseButton_callback);
+            
+            ri.reverseEntry = uicontrol(commandPanel, 'Style', 'edit',...
+                'String', '20',...
+                'Units', 'normalized',...
+                'Position', [.5 .4 .5 .2]);
+            
+            uturnButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Make U-Turn',...
+                'Units', 'normalized',...
+                'Position', [0 .2 .5 .2],...
+                'Callback', @ri.uturnButton_callback);
+            
+            uturnButtonGroup = uibuttongroup(commandPanel,...
+                'Position', [.5 .2 .5 .2]);
+            
+            ri.uturnrightToggle = uicontrol(uturnButtonGroup,...
+                'Style', 'radiobutton', 'String', 'Right U-Turn',...
+                'Units', 'normalized',...
+                'Position', [0 0 1 .5]);
+            
+            ri.uturnleftToggle = uicontrol(uturnButtonGroup,...
+                'Style', 'radiobutton', 'String', 'Left U-Turn',...
+                'Units', 'normalized',...
+                'Position', [0 .5 1 .5]);
+            
             
         end
         

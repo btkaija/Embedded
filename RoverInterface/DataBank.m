@@ -8,10 +8,10 @@ classdef DataBank < handle
     methods
         %Constructor
         function this = DataBank()
-            this.simData = [0 0 0 0 0 0 0];
-            this.realData = [0 0 0 0 0 0 0];
+            this.simData = ones(1,10);
+            this.realData = ones(1,10);
             this.dataLen = 1;
-            this.totalLen = 7;
+            this.totalLen = 10;
         end
         
         %Getter methods
@@ -100,6 +100,42 @@ classdef DataBank < handle
                    
         end
         
+        %GET xpos data
+        function td = getXposData(this, type)
+            if strcmp(type, 'real')
+                td = this.realData(this.dataLen*7+1:this.dataLen*8);
+            elseif strcmp(type, 'sim')
+                td = this.simData(this.dataLen*7+1:this.dataLen*8);
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+                   
+        end
+        
+        %GET ypos data
+        function td = getYposData(this, type)
+            if strcmp(type, 'real')
+                td = this.realData(this.dataLen*8+1:this.dataLen*9);
+            elseif strcmp(type, 'sim')
+                td = this.simData(this.dataLen*8+1:this.dataLen*9);
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+                   
+        end
+        
+        %GET angle data
+        function td = getAngleData(this, type)
+            if strcmp(type, 'real')
+                td = this.realData(this.dataLen*9+1:this.dataLen*10);
+            elseif strcmp(type, 'sim')
+                td = this.simData(this.dataLen*9+1:this.dataLen*10);
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+                   
+        end
+        
         %GET all data
         function d = getAllData(this, type)
             if strcmp(type, 'real')
@@ -109,6 +145,11 @@ classdef DataBank < handle
             else
                 fprintf('Specify either real or sim data\n')
             end
+        end
+        
+        %GET dataLen
+        function dl = getDataLength(this)
+            dl = this.dataLen;
         end
         
         %***************
@@ -213,6 +254,48 @@ classdef DataBank < handle
             end
         end
         
+        %SET xpos data
+        function setXposData(this, newData, type)
+            if length(newData) ~= this.dataLen
+                fprintf('The data is not the correct size\n')
+            end
+            if strcmp(type, 'real')
+                this.realData(this.dataLen*7+1:this.dataLen*8) = newData;
+            elseif strcmp(type, 'sim')
+                this.simData(this.dataLen*7+1:this.dataLen*8) = newData;
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+        end
+        
+        %SET ypos data
+        function setYposData(this, newData, type)
+            if length(newData) ~= this.dataLen
+                fprintf('The data is not the correct size\n')
+            end
+            if strcmp(type, 'real')
+                this.realData(this.dataLen*8+1:this.dataLen*9) = newData;
+            elseif strcmp(type, 'sim')
+                this.simData(this.dataLen*8+1:this.dataLen*9) = newData;
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+        end
+        
+        %SET angle data
+        function setAngleData(this, newData, type)
+            if length(newData) ~= this.dataLen
+                fprintf('The data is not the correct size\n')
+            end
+            if strcmp(type, 'real')
+                this.realData(this.dataLen*9+1:this.dataLen*10) = newData;
+            elseif strcmp(type, 'sim')
+                this.simData(this.dataLen*9+1:this.dataLen*10) = newData;
+            else
+                fprintf('Specify either real or sim data\n')
+            end
+        end
+        
         %SET all data
         function setAllData(this, newData, type)
             if strcmp(type, 'real')
@@ -230,13 +313,13 @@ classdef DataBank < handle
         
         %append data for all types
         %must be an array of data that has a multiple of 7 data points
-        %formatted as: [LIR, RIR, LUS, RUS, LM, RM, T]
+        %formatted as: [LIR, RIR, LUS, RUS, LM, RM, T, XP, YP, A]
         %this is the primary way to add data to the data bank
         function appendData(this, newSimData, newRealData)
             totalPoints = length(newSimData);
-            numPoints = totalPoints/7;
+            numPoints = totalPoints/10;
             %check all data can be added to data bank
-            if mod(totalPoints, 7) ~= 0
+            if mod(totalPoints, 10) ~= 0
                 fprintf('ERROR: Appended data should be multiple of seven.\n');
                 return
             end
@@ -246,7 +329,7 @@ classdef DataBank < handle
                 return
             end
             %add that shizzle!
-            for i = 1:1:7
+            for i = 1:1:10
                 pos = i*(this.dataLen + 1);
                 
                 %insert new  real data
