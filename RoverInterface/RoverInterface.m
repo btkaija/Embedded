@@ -17,14 +17,15 @@ classdef RoverInterface < handle
         tiltPlot
         tiltAnglePlot
         %entry boxes
-        degreeEntry
+        leftdegreeEntry
+        rightdegreeEntry
         forwardEntry
         reverseEntry
         %radio buttons
         controlSim
         controlReal
-        uturnrightToggle
-        uturnleftToggle
+        uturnRightToggle
+        uturnLeftToggle
     end
     methods
         %constructor
@@ -67,7 +68,13 @@ classdef RoverInterface < handle
         %start simulator
         function startButton_callback(ri, ~, ~)
             %fprintf('Starting simulation...\n');
-            startSimulateDataTimer(ri.simulator);
+            choice = questdlg(['Starting the simulation will reset all data.\n',...
+                'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
+            if strcmp('No', choice)
+                return
+            else
+                startSimulateDataTimer(ri.simulator);
+            end
         end
         %stop simulator
         function stopButton_callback(ri, ~, ~)
@@ -135,37 +142,111 @@ classdef RoverInterface < handle
         end
         
         %asks the rover to turn XX number of degrees
-        function turnButton_callback(ri, ~, ~)
-            val = ri.degreeEntry.String;
+        function turnLeftButton_callback(ri, ~, ~)
+            val = ri.leftdegreeEntry.String;
             angle = 0;
             try
                angle = str2double(val);
             catch
-                fprintf('The angle input is not a number');
+                fprintf('The angle input is not a number.\n');
             end
             fprintf(['Turn ',num2str(angle), ' degrees \n']);
             
             if ri.controlReal.Value
-                %move real rover
+                turnXdegrees(ri.db, 'real', angle, 'left')
                 %send command
             elseif ri.controlSim.Value
                 %stop sim
-                %move sim rover
+                turnXdegrees(ri.db, 'sim', angle, 'left')
+            else
+                fprintf('Select which rover to control.\n');
+            end
+        end
+        
+        %asks the rover to turn XX number of degrees
+        function turnRightButton_callback(ri, ~, ~)
+            val = ri.rightdegreeEntry.String;
+            angle = 0;
+            try
+               angle = str2double(val);
+            catch
+                fprintf('The angle input is not a number.\n');
+            end
+            fprintf(['Turn ',num2str(angle), ' degrees \n']);
+            
+            if ri.controlReal.Value
+                turnXdegrees(ri.db, 'real', angle, 'right')
+                %send command
+            elseif ri.controlSim.Value
+                %stop sim
+                turnXdegrees(ri.db, 'sim', angle, 'right')
             else
                 fprintf('Select which rover to control.\n');
             end
         end
         
         function forwardButton_callback(ri, ~, ~)
-            fprintf('Forward button.\n');
+            val = ri.forwardEntry.String;
+            dist = 0;
+            try
+                dist = str2double(val);
+            catch
+                fprintf('The distance input is not a number.\n');
+            end
+            fprintf(['Forward ',num2str(dist), 'cm.\n']);
+            
+            if ri.controlReal.Value
+                moveForward(ri.db, 'real', dist)
+                %send command
+            elseif ri.controlSim.Value
+                %stop sim
+                moveForward(ri.db, 'sim', dist)
+            else
+                fprintf('Select which rover to control.\n');
+            end
         end
         
         function reverseButton_callback(ri, ~, ~)
-            fprintf('Reverse button.\n');
+            val = ri.reverseEntry.String;
+            dist = 0;
+            try
+                dist = str2double(val);
+            catch
+                fprintf('The distance input is not a number.\n');
+            end
+            fprintf(['Reverse ',num2str(dist), 'cm.\n']);
+            
+            if ri.controlReal.Value
+                moveReverse(ri.db, 'real', dist);
+                %send command
+            elseif ri.controlSim.Value
+                %stop sim
+                moveReverse(ri.db, 'sim', dist);
+            else
+                fprintf('Select which rover to control.\n');
+            end
         end
         
         function uturnButton_callback(ri, ~, ~)
-            fprintf('U-Turn button.\n')
+            if ri.uturnRightToggle.Value
+                dir = 'right';
+            elseif ri.uturnLeftToggle.Value
+                dir = 'left';
+            else
+                dir = 'broken';
+            end
+            
+            fprintf(['U-Turn ',dir, '.\n'])
+            
+            if ri.controlReal.Value
+                uturn(ri.db, 'real', dir)
+                %send command
+            elseif ri.controlSim.Value
+                %stop sim
+                uturn(ri.db, 'sim', dir)
+            else
+                fprintf('Select which rover to control.\n');
+            end
         end
         
         
@@ -312,7 +393,7 @@ classdef RoverInterface < handle
             %drawing da stuff
             hold(getAxes(ri.roverMap), 'on')
             drawWalls(ri.roverMap);
-            drawRover(ri.roverMap, 1, 1, 1, 'sim');
+            drawRover(ri.roverMap, 1, 1, 90, 'sim');
             hold(getAxes(ri.roverMap), 'off')
         end
         
@@ -348,54 +429,65 @@ classdef RoverInterface < handle
                 'Position', [.5 0 .5 1],...
                 'Callback', @ri.haltButton_callback);
             
-            turnButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
-                'String', 'Turn X Degrees',...
+            turnLeftButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Turn Left X Degrees',...
                 'Units', 'normalized',...
                 'Position', [0 .8 .5 .2],...
-                'Callback', @ri.turnButton_callback);
+                'Callback', @ri.turnLeftButton_callback);
             
-            ri.degreeEntry = uicontrol(commandPanel, 'Style', 'edit',...
+            ri.leftdegreeEntry = uicontrol(commandPanel, 'Style', 'edit',...
                 'String', '45',...
                 'Units', 'normalized',...
                 'Position', [.5 .8 .5 .2]);
             
+            turnRightButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
+                'String', 'Turn Right X Degrees',...
+                'Units', 'normalized',...
+                'Position', [0 .6 .5 .2],...
+                'Callback', @ri.turnRightButton_callback);
+            
+            ri.rightdegreeEntry = uicontrol(commandPanel, 'Style', 'edit',...
+                'String', '45',...
+                'Units', 'normalized',...
+                'Position', [.5 .6 .5 .2]);
+            
             forwardButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
                 'String', 'Move Forward X cm',...
                 'Units', 'normalized',...
-                'Position', [0 .6 .5 .2],...
+                'Position', [0 .4 .5 .2],...
                 'Callback', @ri.forwardButton_callback);
             
             ri.forwardEntry = uicontrol(commandPanel, 'Style', 'edit',...
                 'String', '20',...
                 'Units', 'normalized',...
-                'Position', [.5 .6 .5 .2]);
+                'Position', [.5 .4 .5 .2]);
             
             reverseButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
                 'String', 'Move Backward X cm',...
                 'Units', 'normalized',...
-                'Position', [0 .4 .5 .2],...
+                'Position', [0 .2 .5 .2],...
                 'Callback', @ri.reverseButton_callback);
             
             ri.reverseEntry = uicontrol(commandPanel, 'Style', 'edit',...
                 'String', '20',...
                 'Units', 'normalized',...
-                'Position', [.5 .4 .5 .2]);
+                'Position', [.5 .2 .5 .2]);
             
             uturnButton = uicontrol(commandPanel, 'Style', 'pushbutton',...
                 'String', 'Make U-Turn',...
                 'Units', 'normalized',...
-                'Position', [0 .2 .5 .2],...
+                'Position', [0 0 .5 .2],...
                 'Callback', @ri.uturnButton_callback);
             
             uturnButtonGroup = uibuttongroup(commandPanel,...
-                'Position', [.5 .2 .5 .2]);
+                'Position', [.5 0 .5 .2]);
             
-            ri.uturnrightToggle = uicontrol(uturnButtonGroup,...
+            ri.uturnRightToggle = uicontrol(uturnButtonGroup,...
                 'Style', 'radiobutton', 'String', 'Right U-Turn',...
                 'Units', 'normalized',...
                 'Position', [0 0 1 .5]);
             
-            ri.uturnleftToggle = uicontrol(uturnButtonGroup,...
+            ri.uturnLeftToggle = uicontrol(uturnButtonGroup,...
                 'Style', 'radiobutton', 'String', 'Left U-Turn',...
                 'Units', 'normalized',...
                 'Position', [0 .5 1 .5]);

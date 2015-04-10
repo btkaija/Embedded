@@ -9,7 +9,9 @@ classdef DataBank < handle
         %Constructor
         function this = DataBank()
             this.simData = ones(1,10);
+            this.simData(10) = 90;
             this.realData = ones(1,10);
+            this.realData(10) = 90;
             this.dataLen = 1;
             this.totalLen = 10;
         end
@@ -143,6 +145,23 @@ classdef DataBank < handle
             elseif strcmp(type, 'sim')
                 d = this.allSimData;
             else
+                fprintf('Specify either real or sim data\n')
+            end
+        end
+        
+        %GET last data set
+        function ds = getLastDataSet(this, type)
+            ds = [];
+            if strcmp(type, 'real')
+                for i = 1:1:10
+                    ds = [ds this.realData(i*this.dataLen)];
+                end
+            elseif strcmp(type, 'sim')
+                for i = 1:1:10
+                    ds = [ds this.simData(i*this.dataLen)];
+                end
+            else
+                ds = ones(1,10);
                 fprintf('Specify either real or sim data\n')
             end
         end
@@ -350,10 +369,235 @@ classdef DataBank < handle
             %update length of data collections
             this.dataLen = numPoints + this.dataLen;
         end
+        %MOVE FORWARD
+        %dist in cm
+        %type either sim or real
+        %only updates the x and y pos
+        function moveForward(this, type, dist)
+
+            dist = dist/30.48;
+            last = getLastDataSet(this, type);
+            x_0 = last(8);
+            y_0 = last(9);
+            angle = last(10);
+            
+            %calculate possible new position
+            x = dist*cos(2*pi*(angle/360)) + x_0;
+            y = dist*sin(2*pi*(angle/360)) + y_0;
+            
+            %check
+            outOfBounds = 0;
+            if(y < 0.75)
+                fprintf('Cannot move rover beyond lower limit!\n')
+                outOfBounds = 1;
+            end
+            if(y > 11.25)
+                fprintf('Cannot move rover beyond upper limit!\n')
+                outOfBounds = 1;
+            end
+            if(x < 0.75)
+                fprintf('Cannot move rover beyond left limit!\n')
+                outOfBounds = 1;
+            end
+            if(x > 5.25)
+                fprintf('Cannot move rover beyond right limit!\n')
+                outOfBounds = 1;
+            end
+            %set new data
+            newData = last;
+            if outOfBounds
+                %dont change the pos
+                %newData = last;
+            else
+                newData(8) = x;
+                newData(9) = y;
+                newData(10) = angle;
+            end
+            %add the new data to the DB
+            if strcmp(type, 'real')
+                lastOther = getLastDataSet(this, 'sim');
+                appendData(this, lastOther, newData);
+            elseif strcmp(type, 'sim')
+                lastOther = getLastDataSet(this, 'real');
+                appendData(this, newData, lastOther);
+            else
+                fprintf('Specify either real or sim data\n')
+                return
+            end 
+        end
+        %MOVE REVERSE
+        %dist in cm
+        %type either sim or real
+        %only updates the x and y pos
+        function moveReverse(this, type, dist)
+            
+            dist = dist/30.48;
+            last = getLastDataSet(this, type);
+            x_0 = last(8);
+            y_0 = last(9);
+            angle = last(10);
+            
+            %calculate possible new position
+            x = x_0 - dist*cos(2*pi*(angle/360));
+            y = y_0 - dist*sin(2*pi*(angle/360));
+            
+            %check
+            outOfBounds = 0;
+            if(y < 0.75)
+                fprintf('Cannot move rover beyond lower limit!\n')
+                outOfBounds = 1;
+            end
+            if(y > 11.25)
+                fprintf('Cannot move rover beyond upper limit!\n')
+                outOfBounds = 1;
+            end
+            if(x < 0.75)
+                fprintf('Cannot move rover beyond left limit!\n')
+                outOfBounds = 1;
+            end
+            if(x > 5.25)
+                fprintf('Cannot move rover beyond right limit!\n')
+                outOfBounds = 1;
+            end
+            %set new data
+            newData = last;
+            if outOfBounds
+                %dont change the pos
+                %newData = last;
+            else
+                newData(8) = x;
+                newData(9) = y;
+                newData(10) = angle;
+            end
+            %add the new data to the DB
+            if strcmp(type, 'real')
+                lastOther = getLastDataSet(this, 'sim');
+                appendData(this, lastOther, newData);
+            elseif strcmp(type, 'sim')
+                lastOther = getLastDataSet(this, 'real');
+                appendData(this, newData, lastOther);
+            else
+                fprintf('Specify either real or sim data\n')
+                return
+            end
+        end
         
-    end
-    methods(Static)
-        %data manip methods
-        %***************
+        %Turn X Degrees
+        %angle is in degrees
+        %dir is either right or left
+        function turnXdegrees(this, type, angle, dir)
+            last = getLastDataSet(this, type);
+            lastAngle = last(10);
+            if strcmp(dir, 'right')
+                newAngle = lastAngle - angle;
+            elseif strcmp(dir, 'left')
+                newAngle = lastAngle + angle;
+            else
+                fprintf('Incorrect direction.\n');
+                return
+            end
+            
+            newData = last;
+            newData(10) = newAngle;
+            
+            if strcmp(type, 'real')
+                lastOther = getLastDataSet(this, 'sim');
+                appendData(this, lastOther, newData);
+            elseif strcmp(type, 'sim')
+                lastOther = getLastDataSet(this, 'real');
+                appendData(this, newData, lastOther);
+            else
+                fprintf('Specify either real or sim data\n')
+                return
+            end
+        end
+        
+        %make a u turn left or right
+        %dir can be left or right
+        function uturn(this, type, dir)
+            last = getLastDataSet(this, type);
+            x_0 = last(8);
+            y_0 = last(9);
+            angle_0 = last(10);
+            angle_0 = mod(angle_0, 360);
+            angle = angle_0 + 180;
+            
+            if strcmp(dir, 'right')
+                x = x_0 + cos(2*pi*((angle_0-90)/360));
+                y = y_0 + sin(2*pi*((angle_0-90)/360));
+            elseif strcmp(dir, 'left')
+                x = x_0 - cos(2*pi*((angle_0-90)/360));
+                y = y_0 - sin(2*pi*((angle_0-90)/360));
+            else
+                fprintf('Incorrect direction.\n');
+                return
+            end
+            %check
+            outOfBounds = 0;
+            if(y < 0.75)
+                fprintf('Cannot move rover beyond lower limit!\n')
+                outOfBounds = 1;
+            end
+            if(y > 11.25)
+                fprintf('Cannot move rover beyond upper limit!\n')
+                outOfBounds = 1;
+            end
+            if(x < 0.75)
+                fprintf('Cannot move rover beyond left limit!\n')
+                outOfBounds = 1;
+            end
+            if(x > 5.25)
+                fprintf('Cannot move rover beyond right limit!\n')
+                outOfBounds = 1;
+            end
+            %set new data
+            newData = last;
+            if outOfBounds
+                %dont change the pos
+                %newData = last;
+            else
+                newData(8) = x;
+                newData(9) = y;
+                newData(10) = angle;
+            end
+            %add the new data to the DB
+            if strcmp(type, 'real')
+                lastOther = getLastDataSet(this, 'sim');
+                appendData(this, lastOther, newData);
+            elseif strcmp(type, 'sim')
+                lastOther = getLastDataSet(this, 'real');
+                appendData(this, newData, lastOther);
+            else
+                fprintf('Specify either real or sim data\n')
+                return
+            end
+        end
+        
+        function d = calcLIRData(this, type)
+            all = getLIRSData(this, type);
+            
+        end
+        
+        function d = calcRIRData(this, type)
+        end
+        
+        function d = calcLUSData(this, type)
+        end
+        
+        function d = calcRUSData(this, type)
+        end
+        
+        %return constant or 0 motor speed
+        function d = calcLMData(this, type)
+        end
+        
+        %return constant or 0 motor speed
+        function d = calcRMData(this, type)
+        end
+        
+        function d = calcTiltData(this, type)
+        end
+        
+        
     end
 end

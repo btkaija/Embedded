@@ -33,7 +33,7 @@ classdef RoverMap < handle
         function drawRover(this, xpos, ypos, angle, type)
             
             %error checking for limits of map
-            if (xpos < 0.6 || xpos > 5.4)
+            if (xpos < 0.75 || xpos > 5.25)
                 fprintf('Rover beyond wall, not possible!\n')
                 return
             end

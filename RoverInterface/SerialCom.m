@@ -113,7 +113,7 @@ classdef SerialCom < handle
             this.recievedBits = [this.recievedBits binaryData];
             
             %init data to be added to DB
-            newSimData = zeros(1,10);
+            %newSimData = zeros(1,10);
             newRealData = zeros(1,10);
             
             %TODO
@@ -133,11 +133,7 @@ classdef SerialCom < handle
                     %do nothing. simulator will add to db
                 else %no sim running
                     %get lastest sim data and use that as new sim value
-                    allData = getAllData(this.db, 'sim');
-                    l = length(allData)/10;
-                    for i = 1:1:10
-                        newSimData(i) = allData(i*l);
-                    end
+                    newSimData = getLastDataSet(this.db, 'sim');
                     %use when part above is implemented
                     %newSimData
                     %newRealData = receivedData;
