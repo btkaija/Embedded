@@ -48,6 +48,7 @@ classdef Simulator < handle
         
         function simulateMove(this)
             ERROR = 1;%cm
+            fprintf(['Current State: ', this.state, '.\n']);
             
             switch this.state
                 case 'start'
@@ -56,47 +57,47 @@ classdef Simulator < handle
                     moveForward(this.db, 'sim', 10)
                 case 'right'
                     moveForward(this.db, 'sim', 10)
-                case 'middle'
-                    moveForward(this.db, 'sim', 10)
                 case 'uturn1_1'
                     moveForward(this.db, 'sim', 30)
                 case 'uturn1_2'
                     uturn(this.db, 'sim', 'right')
+                case 'uturn1_3'
+                    moveForward(this.db, 'sim', 30)
+                case 'middle'
+                    moveForward(this.db, 'sim', 10)
                 otherwise
                     fprintf('No state selected for Sim.\n')
                     return
             end
             ds = getLastDataSet(this.db, 'sim');
             
-            if(abs(ds(1) - ds(3)) < ERROR)
+            %follow left wall state
+            if(abs(ds(1) - ds(3)) < ERROR && strcmp(this.state, 'start'))
                 this.state = 'left';
                 return
             end
-            
-            if(abs(ds(2) - ds(4)) < ERROR)
-                this.state = 'right';
-                return
-            end
-            
-            if(abs(ds(3)-ds(4)) < 2*ERROR && ds(1) == 25 && ds(2) == 25)
-                this.state = 'middle';
-                return
-            end
-            
-            %first uturn
-            if((strcmp(this.state, 'left')) && ds(1) == 25)
+            %part one of first uturn
+            if(strcmp(this.state, 'left') && ds(1) == 25)
                 this.state = 'uturn1_1';
                 return
             end
-            ds(1)
-            ds(3)
-            this.state
+            %part 2 of first uturn
             if(strcmp(this.state, 'uturn1_1') && ds(1) == 25 && ds(3) == 180)
                 this.state = 'uturn1_2';
                 return
             end
-                
-            fprintf('No new state found.\n')
+            %part 3 of first uturn
+            if(strcmp(this.state, 'uturn1_2') && ds(1) == 25 && ds(3) == 180)
+                this.state = 'uturn1_3';
+                return
+            end
+            %is in middle lane
+            if(abs(ds(3)-ds(4)) < 2*ERROR && ds(1) == 25 && ds(2) == 25 && ...
+                    strcmp(this.state, 'uturn1_3') && ds(3) < 180 && ds(4) < 180)
+                this.state = 'middle';
+                return
+            end
+            
         end
         
    end
