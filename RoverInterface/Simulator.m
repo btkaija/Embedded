@@ -5,6 +5,7 @@ classdef Simulator < handle
        db
        isOn
        port
+       state
    end
    
    methods
@@ -14,6 +15,7 @@ classdef Simulator < handle
             this.port = serial;
             this.db = dataBase;
             this.isOn = 0;
+            this.state = 'start';
         end
         
         
@@ -44,8 +46,57 @@ classdef Simulator < handle
             end
         end
         
-        function data = simulateData(this)
-            %simulate the data using DB
+        function simulateMove(this)
+            ERROR = 1;%cm
+            
+            switch this.state
+                case 'start'
+                    moveForward(this.db, 'sim', 20)
+                case 'left'
+                    moveForward(this.db, 'sim', 10)
+                case 'right'
+                    moveForward(this.db, 'sim', 10)
+                case 'middle'
+                    moveForward(this.db, 'sim', 10)
+                case 'uturn1_1'
+                    moveForward(this.db, 'sim', 30)
+                case 'uturn1_2'
+                    uturn(this.db, 'sim', 'right')
+                otherwise
+                    fprintf('No state selected for Sim.\n')
+                    return
+            end
+            ds = getLastDataSet(this.db, 'sim');
+            
+            if(abs(ds(1) - ds(3)) < ERROR)
+                this.state = 'left';
+                return
+            end
+            
+            if(abs(ds(2) - ds(4)) < ERROR)
+                this.state = 'right';
+                return
+            end
+            
+            if(abs(ds(3)-ds(4)) < 2*ERROR && ds(1) == 25 && ds(2) == 25)
+                this.state = 'middle';
+                return
+            end
+            
+            %first uturn
+            if((strcmp(this.state, 'left')) && ds(1) == 25)
+                this.state = 'uturn1_1';
+                return
+            end
+            ds(1)
+            ds(3)
+            this.state
+            if(strcmp(this.state, 'uturn1_1') && ds(1) == 25 && ds(3) == 180)
+                this.state = 'uturn1_2';
+                return
+            end
+                
+            fprintf('No new state found.\n')
         end
         
    end
@@ -54,18 +105,13 @@ classdef Simulator < handle
        %callback function for the timer simulator
         function simulateDataTimer_callback(~, ~, this)
             %TODO: implement real simulations
-            fprintf('Simulating data...\n');
-            %TEMP: generating and adding random data
-            newSimData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandTilt(), 1, 1 , 90];
-            newRealData = [Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandData(), Simulator.simulateRandData(),...
-                Simulator.simulateRandTilt(), 2, 2, 90];
-            appendData(this.db, newSimData, newRealData)
-            %END TEMP
+            %fprintf('Simulating data...\n');
+            
+            updateRoverData(this.db);
+            
+            %make rover move here
+            simulateMove(this)
+            
                        
         end
         %simulates random data

@@ -67,15 +67,18 @@ classdef RoverInterface < handle
         
         %start simulator
         function startButton_callback(ri, ~, ~)
-            %fprintf('Starting simulation...\n');
+            
             choice = questdlg(['Starting the simulation will reset all data.\n',...
                 'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
             if strcmp('No', choice)
                 return
             else
+                resetDB(ri.db)
+                fprintf('Starting simulation...\n');
                 startSimulateDataTimer(ri.simulator);
             end
         end
+        
         %stop simulator
         function stopButton_callback(ri, ~, ~)
             %fprintf('Stopping simulation...\n');
@@ -117,8 +120,7 @@ classdef RoverInterface < handle
         %callback for when the clear button is pressed
         function clearButton_callback(ri, ~, ~)
             fprintf('Clearing current data from plots...\n')
-            setAllData(ri.db, zeros(1,10), 'sim')
-            setAllData(ri.db, zeros(1,10), 'real')
+            resetDB(ri.db)
             cla(ri.leftIRSensorPlot)
             cla(ri.rightIRSensorPlot)
             cla(ri.leftUSSensorPlot)
@@ -129,16 +131,28 @@ classdef RoverInterface < handle
         end
         
         %asks the rover to begin rover automation
+        %this function also clears the databank
         function traverseButton_callback(ri, ~, ~)
             fprintf('Traverse button.\n');
-            %should not work for sim rover
-            startAutomator(ri.port);
+            
+            choice = questdlg(['Starting the rover traversal will reset all data.\n',...
+                'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
+            if strcmp('No', choice)
+                return
+            else
+                resetDB(ri.db);
+                startAutomator(ri.port);
+                %send start command
+                sendMessage(ri.port, 'auto-begin');
+            end
         end
         
+        %stops rover automation
         function haltButton_callback(ri, ~, ~)
             fprintf('Halt button.\n');
             stopAutomator(ri.port);
-            %should not work for for sim rover
+            %send stop command
+            sendMessage(ri.port, 'auto-end');
         end
         
         %asks the rover to turn XX number of degrees
@@ -153,14 +167,26 @@ classdef RoverInterface < handle
             fprintf(['Turn ',num2str(angle), ' degrees \n']);
             
             if ri.controlReal.Value
+                %stop auto
+                if ri.port.autoOn
+                    stopAutomator(ri.port)
+                end
+                
                 turnXdegrees(ri.db, 'real', angle, 'left')
                 %send command
+                sendMessage(ri.port, ['turn-left-',angle]);
             elseif ri.controlSim.Value
                 %stop sim
+                if ri.simulator.isOn
+                    stopSimulateDataTimer(ri.simulator)
+                end
+                
                 turnXdegrees(ri.db, 'sim', angle, 'left')
             else
                 fprintf('Select which rover to control.\n');
             end
+            
+            updateRoverData(ri.db)
         end
         
         %asks the rover to turn XX number of degrees
@@ -175,16 +201,29 @@ classdef RoverInterface < handle
             fprintf(['Turn ',num2str(angle), ' degrees \n']);
             
             if ri.controlReal.Value
+                %stop auto
+                if ri.port.autoOn
+                    stopAutomator(ri.port)
+                end
+                
                 turnXdegrees(ri.db, 'real', angle, 'right')
                 %send command
+                sendMessage(ri.port, ['turn-right-',angle]);
             elseif ri.controlSim.Value
                 %stop sim
+                if ri.simulator.isOn
+                    stopSimulateDataTimer(ri.simulator)
+                end
+                
                 turnXdegrees(ri.db, 'sim', angle, 'right')
             else
                 fprintf('Select which rover to control.\n');
             end
+            
+            updateRoverData(ri.db)
         end
         
+        %moves forward x cm
         function forwardButton_callback(ri, ~, ~)
             val = ri.forwardEntry.String;
             dist = 0;
@@ -196,16 +235,29 @@ classdef RoverInterface < handle
             fprintf(['Forward ',num2str(dist), 'cm.\n']);
             
             if ri.controlReal.Value
+                %stop auto
+                if ri.port.autoOn
+                    stopAutomator(ri.port)
+                end
+                
                 moveForward(ri.db, 'real', dist)
                 %send command
+                sendMessage(ri.port, ['forward-',dist]);
             elseif ri.controlSim.Value
                 %stop sim
+                if ri.simulator.isOn
+                    stopSimulateDataTimer(ri.simulator)
+                end
+                
                 moveForward(ri.db, 'sim', dist)
             else
                 fprintf('Select which rover to control.\n');
             end
+
+            updateRoverData(ri.db)
         end
         
+        %moves backward x cm
         function reverseButton_callback(ri, ~, ~)
             val = ri.reverseEntry.String;
             dist = 0;
@@ -217,16 +269,29 @@ classdef RoverInterface < handle
             fprintf(['Reverse ',num2str(dist), 'cm.\n']);
             
             if ri.controlReal.Value
+                %stop auto
+                if ri.port.autoOn
+                    stopAutomator(ri.port)
+                end
+                
                 moveReverse(ri.db, 'real', dist);
                 %send command
+                sendMessage(ri.port, ['reverse-',dist]);
             elseif ri.controlSim.Value
                 %stop sim
+                if ri.simulator.isOn
+                    stopSimulateDataTimer(ri.simulator)
+                end
+                
                 moveReverse(ri.db, 'sim', dist);
             else
                 fprintf('Select which rover to control.\n');
             end
+            
+            updateRoverData(ri.db)
         end
         
+        %makes a left or right u turn
         function uturnButton_callback(ri, ~, ~)
             if ri.uturnRightToggle.Value
                 dir = 'right';
@@ -239,14 +304,26 @@ classdef RoverInterface < handle
             fprintf(['U-Turn ',dir, '.\n'])
             
             if ri.controlReal.Value
+                %stop auto
+                if ri.port.autoOn
+                    stopAutomator(ri.port)
+                end
+                
                 uturn(ri.db, 'real', dir)
                 %send command
+                sendMessage(ri.port, ['uturn-',dir]);
             elseif ri.controlSim.Value
                 %stop sim
+                if ri.simulator.isOn
+                    stopSimulateDataTimer(ri.simulator)
+                end
+                
                 uturn(ri.db, 'sim', dir)
             else
                 fprintf('Select which rover to control.\n');
             end
+            
+            updateRoverData(ri.db)
         end
         
         
@@ -355,36 +432,55 @@ classdef RoverInterface < handle
     
     %private init methods
     methods (Access = private)
+        
+        %creates all the graphs, wooo!
         function initDataDisplay(ri)
             dataPanel = uipanel('Title', 'Rover Data', 'Position', [.2 0 .4 1]);
+
             %init all plots
             ri.rightIRSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .75 .5 .25]);
+                'OuterPosition', [.5 .75 .5 .25], 'YLim', [0 30]);
             ri.rightIRSensorPlot.Title.String = 'Right IR Sensor';
+            %axis(ri.rightIRSensorPlot, [0 dl 0 30]);
+            
             ri.leftIRSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .75 .5 .25]);
+                'OuterPosition', [0 .75 .5 .25], 'YLim', [0 30]);
             ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
+            %axis(ri.leftIRSensorPlot, [0 dl 0 30]);
+            
             ri.rightUSSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .5 .5 .25]);
+                'OuterPosition', [.5 .5 .5 .25], 'YLim', [0 200]);
             ri.rightUSSensorPlot.Title.String = 'Right US Sensor';
+            %axis(ri.rightUSSensorPlot, [0 dl 0 200]);
+                        
             ri.leftUSSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .5 .5 .25]);
+                'OuterPosition', [0 .5 .5 .25], 'YLim', [0 200]);
             ri.leftUSSensorPlot.Title.String = 'Left US Sensor';
+            %axis(ri.leftUSSensorPlot, [0 dl 0 200]);
+            
             ri.leftMotorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .25 .5 .25]);
+                'OuterPosition', [0 .25 .5 .25], 'YLim', [0 5]);
             ri.leftMotorPlot.Title.String = 'Left Motor Encoder';
+            %axis(ri.leftMotorPlot, [0 dl 0 5]);
+            
             ri.rightMotorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .25 .5 .25]);
+                'OuterPosition', [.5 .25 .5 .25], 'YLim', [0 5]);
             ri.rightMotorPlot.Title.String = 'Right Motor Encoder';
+            %axis(ri.rightMotorPlot, [0 dl 0 5]);
             
             ri.tiltPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 0 .5 .25]);
+                'OuterPosition', [0 0 .5 .25], 'YLim', [-1 1]);
             ri.tiltPlot.Title.String = 'Tilt';
+            %axis(ri.tiltPlot, [0 dl -1 1]);
+            
             ri.tiltAnglePlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 0 .5 .25]);
+                'OuterPosition', [.5 0 .5 .25], 'YLim', [-1 1]);
             ri.tiltAnglePlot.Title.String = 'Tilt Angle';
+            %axis(ri.tiltAnglePlot, [-1 1 -1 1]);
+            
             
         end
+        
         %init the map from the map class
         function initMap(ri)
             mapPanel = uipanel('Title', 'Rover Map', 'Position', [.6 0 .4 1]);
@@ -397,6 +493,7 @@ classdef RoverInterface < handle
             hold(getAxes(ri.roverMap), 'off')
         end
         
+        %init the control buttons for the rover
         function initControlButtons(ri)
             controlPanel = uipanel('Title', 'Rover Controls', 'Position', [0, 0, .2, .5]);
             
@@ -495,6 +592,7 @@ classdef RoverInterface < handle
             
         end
         
+        %init the data options buttons for simulator
         function initOptionButtons(ri)
             %create GUI elements
             optionPanel = uipanel('Title', 'Data Options', 'Position', [0 .5 .2 .5]);

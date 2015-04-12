@@ -8,10 +8,15 @@ classdef DataBank < handle
     methods
         %Constructor
         function this = DataBank()
-            this.simData = ones(1,10);
-            this.simData(10) = 90;
-            this.realData = ones(1,10);
-            this.realData(10) = 90;
+            resetDB(this);
+        end
+        
+        %resets the data base to both rovers starting position
+        function resetDB(this)
+            this.simData = [25 25 180 180 0 0 0 1 1 90];
+
+            this.realData = [25 25 180 180 0 0 0 1 1 90];
+
             this.dataLen = 1;
             this.totalLen = 10;
         end
@@ -332,7 +337,7 @@ classdef DataBank < handle
         
         %append data for all types
         %must be an array of data that has a multiple of 7 data points
-        %formatted as: [LIR, RIR, LUS, RUS, LM, RM, T, XP, YP, A]
+        %formatted as: [LIR, RIR, LUS, RUS, LM, RM, T, XPOS, YPOS, ANGLE]
         %this is the primary way to add data to the data bank
         function appendData(this, newSimData, newRealData)
             totalPoints = length(newSimData);
@@ -391,7 +396,7 @@ classdef DataBank < handle
                 fprintf('Cannot move rover beyond lower limit!\n')
                 outOfBounds = 1;
             end
-            if(y > 11.25)
+            if(y > 13.25)
                 fprintf('Cannot move rover beyond upper limit!\n')
                 outOfBounds = 1;
             end
@@ -447,7 +452,7 @@ classdef DataBank < handle
                 fprintf('Cannot move rover beyond lower limit!\n')
                 outOfBounds = 1;
             end
-            if(y > 11.25)
+            if(y > 13.25)
                 fprintf('Cannot move rover beyond upper limit!\n')
                 outOfBounds = 1;
             end
@@ -496,7 +501,7 @@ classdef DataBank < handle
                 fprintf('Incorrect direction.\n');
                 return
             end
-            
+            newAngle = mod(newAngle, 360);
             newData = last;
             newData(10) = newAngle;
             
@@ -523,11 +528,11 @@ classdef DataBank < handle
             angle = angle_0 + 180;
             
             if strcmp(dir, 'right')
-                x = x_0 + cos(2*pi*((angle_0-90)/360));
-                y = y_0 + sin(2*pi*((angle_0-90)/360));
+                x = x_0 + 2*cos(2*pi*((angle_0-90)/360));
+                y = y_0 + 2*sin(2*pi*((angle_0-90)/360));
             elseif strcmp(dir, 'left')
-                x = x_0 - cos(2*pi*((angle_0-90)/360));
-                y = y_0 - sin(2*pi*((angle_0-90)/360));
+                x = x_0 - 2*cos(2*pi*((angle_0-90)/360));
+                y = y_0 - 2*sin(2*pi*((angle_0-90)/360));
             else
                 fprintf('Incorrect direction.\n');
                 return
@@ -535,19 +540,19 @@ classdef DataBank < handle
             %check
             outOfBounds = 0;
             if(y < 0.75)
-                fprintf('Cannot move rover beyond lower limit!\n')
+                fprintf('Cannot turn rover beyond lower limit!\n')
                 outOfBounds = 1;
             end
-            if(y > 11.25)
-                fprintf('Cannot move rover beyond upper limit!\n')
+            if(y > 13.25)
+                fprintf('Cannot turn rover beyond upper limit!\n')
                 outOfBounds = 1;
             end
             if(x < 0.75)
-                fprintf('Cannot move rover beyond left limit!\n')
+                fprintf('Cannot turn rover beyond left limit!\n')
                 outOfBounds = 1;
             end
             if(x > 5.25)
-                fprintf('Cannot move rover beyond right limit!\n')
+                fprintf('Cannot turn rover beyond right limit!\n')
                 outOfBounds = 1;
             end
             %set new data
@@ -574,28 +579,215 @@ classdef DataBank < handle
         end
         
         function d = calcLIRData(this, type)
-            all = getLIRSData(this, type);
-            
+            data = getLastDataSet(this, type);
+            origAngle = mod(data(10), 360);
+            xpos = data(8);
+            ypos = data(9);
+            %calc max range of sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle + 60)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle + 60)/360)+ypos;
+            xs2 = 0.8202*cos(2*pi*(origAngle + 90)/360)+xs1;
+            ys2 = 0.8202*sin(2*pi*(origAngle + 90)/360)+ys1;
+           
+            if(xs2 < 0 && ys2 > 2 && ys2 < 12)
+                %calc dist to left wall
+                if(origAngle == 90)
+                    dif = -xs2;
+                else
+                    xwall = -xs2;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            elseif (xs2 > 6 && ys2 > 2 && ys2 < 12)
+                %calc dist to right wall
+                if(origAngle == 270)
+                    dif = xs2-6;
+                else
+                    xwall = xs2-6;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            else
+                %no wall found. use max sensor range
+                dif = 0;
+            end
+            d = 25 - (dif*12*2.54);
         end
         
         function d = calcRIRData(this, type)
+            data = getLastDataSet(this, type);
+            origAngle = mod(data(10), 360);
+            xpos = data(8);
+            ypos = data(9);
+            %calc max range of sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle - 60)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle - 60)/360)+ypos;
+            xs2 = 0.8202*cos(2*pi*(origAngle - 90)/360)+xs1;
+            ys2 = 0.8202*sin(2*pi*(origAngle - 90)/360)+ys1;
+           
+            if(xs2 < 0 && ys2 > 2 && ys2 < 12)
+                %calc dist to left wall
+                if(origAngle == 270)
+                    dif = -xs2;
+                else
+                    xwall = -xs2;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            elseif (xs2 > 6 && ys2 > 2 && ys2 < 12)
+                %calc dist to right wall
+                if(origAngle == 90)
+                    dif = xs2-6;
+                else
+                    xwall = xs2-6;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            else
+                %no wall found. use max sensor range
+                dif = 0;
+            end
+            d = 25 - (dif*12*2.54);
         end
         
         function d = calcLUSData(this, type)
+            data = getLastDataSet(this, type);
+            origAngle = mod(data(10), 360);
+            xpos = data(8);
+            ypos = data(9);
+            %calc max range of sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle + 120)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle + 120)/360)+ypos;
+            xs2 = 5.9055*cos(2*pi*(origAngle + 90)/360)+xs1;
+            ys2 = 5.9055*sin(2*pi*(origAngle + 90)/360)+ys1;
+           
+            if(xs2 < 0 && ys2 > 2 && ys2 < 12)
+                %calc dist to left wall
+                if(origAngle == 90)
+                    dif = -xs2;
+                else
+                    xwall = -xs2;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            elseif (xs2 > 6 && ys2 > 2 && ys2 < 12)
+                %calc dist to right wall
+                if(origAngle == 270)
+                    dif = xs2-6;
+                else
+                    xwall = xs2-6;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            else
+                %no wall found. use max sensor range
+                dif = 0;
+            end
+            d = 180 - (dif*12*2.54);
         end
         
         function d = calcRUSData(this, type)
+            data = getLastDataSet(this, type);
+            origAngle = mod(data(10), 360);
+            xpos = data(8);
+            ypos = data(9);
+            %calc max range of sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle - 120)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle - 120)/360)+ypos;
+            xs2 = 5.9055*cos(2*pi*(origAngle - 90)/360)+xs1;
+            ys2 = 5.9055*sin(2*pi*(origAngle - 90)/360)+ys1;
+           
+            if(xs2 < 0 && ys2 > 2 && ys2 < 12)
+                %calc dist to left wall
+                if(origAngle == 270)
+                    dif = -xs2;
+                else
+                    xwall = -xs2;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            elseif (xs2 > 6 && ys2 > 2 && ys2 < 12)
+                %calc dist to right wall
+                if(origAngle == 90)
+                    dif = xs2-6;
+                else
+                    xwall = xs2-6;
+                    ywall = xwall * sin(2*pi*origAngle/360) / sin(2*pi*(90-origAngle)/360);
+                    dif = sqrt(xwall^2 + ywall^2);
+                end
+            else
+                %no wall found. use max sensor range
+                dif = 0;
+            end
+            d = 180 - (dif*12*2.54);
         end
         
         %return constant or 0 motor speed
         function d = calcLMData(this, type)
+            xpos = getXposData(this, type);
+            ypos = getYposData(this, type);
+            angle = getAngleData(this, type);
+            dl = this.dataLen;
+            d = 0;
+            
+            if dl == 1
+                return
+            end
+            
+            %change in y pos
+            if angle(dl) < 180
+                deltay = ypos(dl) - ypos(dl-1);
+            elseif angle(dl) > 180
+                deltay = ypos(dl-1) - ypos(dl);
+            else
+                deltay = 0;
+            end
+
+            %change in x pos
+            if angle(dl) > 270 || angle(dl) < 90
+                deltax = xpos(dl) - xpos(dl-1);
+            elseif angle(dl) > 90 && angle(dl) < 270
+                deltax = xpos(dl-1) - xpos(dl);
+            else
+                deltax = 0;
+            end
+            deltaDist = sqrt(deltax^2 + deltay^2);
+            %TODO: check units
+            d = d + deltaDist;
+            olda = angle(dl-1);
+            newa = angle(dl);
+            
+            %turning not correct...check into this...later
+            if olda - newa ~= 0 && d == 0
+                d = 1;
+            end
+            
         end
         
         %return constant or 0 motor speed
         function d = calcRMData(this, type)
+            d = calcLMData(this, type);
         end
         
+        %TODO: add functionality
         function d = calcTiltData(this, type)
+            d = 0;
+        end
+        
+        %update the DB with date from the current rover position
+        function updateRoverData(this)
+            oldSim = getLastDataSet(this, 'sim');
+            sData = [calcLIRData(this, 'sim'), calcRIRData(this, 'sim'),...
+                calcLUSData(this, 'sim'), calcRUSData(this, 'sim'),...
+                calcLMData(this, 'sim'), calcRMData(this, 'sim'),...
+                calcTiltData(this, 'sim'), oldSim(8), oldSim(9), oldSim(10)];
+            oldReal = getLastDataSet(this, 'real');
+            rData = [calcLIRData(this, 'real'), calcRIRData(this, 'real'),...
+                calcLUSData(this, 'real'), calcRUSData(this, 'real'),...
+                calcLMData(this, 'real'), calcRMData(this, 'real'),...
+                calcTiltData(this, 'real'), oldReal(8), oldReal(9), oldReal(10)];
+            
+            appendData(this, sData, rData)
         end
         
         

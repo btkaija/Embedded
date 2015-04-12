@@ -38,6 +38,7 @@ classdef SerialCom < handle
             else
                 openPort(this)
             end
+            
             this.receivedData = zeros(1,10);
             this.dataReady = 0;
         end
@@ -52,7 +53,7 @@ classdef SerialCom < handle
             %try opening port. if error delete the port
             try
                 fopen(this.port);
-            catch err
+            catch
                 fprintf('ERROR: The port is unavailable to open. Deleting Port.\n')
                 delete(this.port)
                 return
@@ -62,10 +63,11 @@ classdef SerialCom < handle
         %closes the port and makes sure no errors occur
         function closePort(this)
             try
-                closePort(ri.port);
+                fclose(ri.port);
                 delete(this.port);
             catch
-                fprintf('ERROR: The port does not exist. Cannot be deleted.\n');
+                fprintf('ERROR: That port does not exist. Deleting all ports instead.\n');
+                delete(instrfind)
             end
         end
         
@@ -82,7 +84,7 @@ classdef SerialCom < handle
         %send message over the port
         function sendMessage(this, msg)
             out = strcat('Sending message: "', msg, '" over port "',...
-                this.portName,'\n');
+                this.portName,'.\n');
             fprintf(out);
             %any preprossing goes here
         end
@@ -127,13 +129,16 @@ classdef SerialCom < handle
             %if extra data exists that can't be sent
             %store in tempData
             
-            %will trigger every time data is ready to be added to DB
+            %will trigger every time recieved data is ready to be added to DB
             if this.dataReady
                 if this.sim.isOn
-                    %do nothing. simulator will add to db
+                    %do nothing.
+                    return
                 else %no sim running
+                    
                     %get lastest sim data and use that as new sim value
                     newSimData = getLastDataSet(this.db, 'sim');
+                    
                     %use when part above is implemented
                     %newSimData
                     %newRealData = receivedData;
@@ -141,6 +146,7 @@ classdef SerialCom < handle
                     appendData(this.db, newSimData, newRealData);
                 end
                 
+                %automatically decide and send next command
                 if this.autoOn
                     newMsg = getNextCommand(this.auto);
                     sendMessage(this, newMsg);

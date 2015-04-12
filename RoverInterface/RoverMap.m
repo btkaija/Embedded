@@ -38,6 +38,7 @@ classdef RoverMap < handle
                 return
             end
             %offset to make input angles understandable
+            origAngle = angle;
             angle = angle-45;
             %store
             if strcmp(type, 'sim')
@@ -80,7 +81,35 @@ classdef RoverMap < handle
             plot(this.mapAxes, [xpos+0.4*cos(2*pi*(35+angle)/360), xpos+0.5*cos(2*pi*(45+angle)/360)],...
                 [ypos+0.4*sin(2*pi*(35+angle)/360), ypos+0.5*sin(2*pi*(45+angle)/360)], color)
             
-            %TODO draw sensor values
+            %draw sensor lines
+            
+            %plot right IR sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle - 60)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle - 60)/360)+ypos;
+            xs2 = 0.8202*cos(2*pi*(origAngle - 90)/360)+xs1;
+            ys2 = 0.8202*sin(2*pi*(origAngle - 90)/360)+ys1;
+            plot(this.mapAxes, [xs1 xs2], [ys1 ys2], 'g--')
+            
+            %plot left IR sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle + 60)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle + 60)/360)+ypos;
+            xs2 = 0.8202*cos(2*pi*(origAngle + 90)/360)+xs1;
+            ys2 = 0.8202*sin(2*pi*(origAngle + 90)/360)+ys1;
+            plot(this.mapAxes, [xs1 xs2], [ys1 ys2], 'g--')
+            
+            %plot right US sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle - 120)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle - 120)/360)+ypos;
+            xs2 = 5.9055*cos(2*pi*(origAngle - 90)/360)+xs1;
+            ys2 = 5.9055*sin(2*pi*(origAngle - 90)/360)+ys1;
+            plot(this.mapAxes, [xs1 xs2], [ys1 ys2], 'g--')
+            
+            %plot left US sensor
+            xs1 = 0.6124*cos(2*pi*(origAngle + 120)/360)+xpos;
+            ys1 = 0.6124*sin(2*pi*(origAngle + 120)/360)+ypos;
+            xs2 = 5.9055*cos(2*pi*(origAngle + 90)/360)+xs1;
+            ys2 = 5.9055*sin(2*pi*(origAngle + 90)/360)+ys1;
+            plot(this.mapAxes, [xs1 xs2], [ys1 ys2], 'g--')
             
             hold (this.mapAxes, 'off')
         end
