@@ -30,6 +30,7 @@ classdef Simulator < handle
             this.simulateDataTimer.Name = 'SIM-timer';
             
             start(this.simulateDataTimer)
+            this.state = 'start';
             this.isOn = 1;
         end
         

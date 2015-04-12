@@ -74,6 +74,7 @@ classdef RoverInterface < handle
                 return
             else
                 resetDB(ri.db)
+                clearButton_callback(ri, 0, 0)
                 fprintf('Starting simulation...\n');
                 startSimulateDataTimer(ri.simulator);
             end
