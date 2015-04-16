@@ -3,8 +3,9 @@ classdef SerialCom < handle
         port
         portNumber
         portName
-        recievedBits
+        receivedBits
         receivedData
+        receivedState
         tempData
         dataReady
         sim
@@ -41,6 +42,7 @@ classdef SerialCom < handle
             
             this.receivedData = zeros(1,10);
             this.dataReady = 0;
+            this.receivedState = 'start';
         end
         
         %open the port
@@ -112,30 +114,24 @@ classdef SerialCom < handle
             else
                 fprintf('No bytes! Something went wrong.\n')
             end
-            this.recievedBits = [this.recievedBits binaryData];
+            this.receivedBits = [this.receivedBits binaryData];
             
-            %init data to be added to DB
-            %newSimData = zeros(1,10);
-            newRealData = zeros(1,10);
+            %show data
+            binaryData
             
-            %TODO
-            %complete when integration process begins
-            %error checking
-            
-            %add correct data to receivedData matrix
-            %maybe just get it from tempData?
-            
-            %set dataReady boolean if data is ready
-            %if extra data exists that can't be sent
-            %store in tempData
+            %get the values for newRealData as sensor or motor
+            %['motor' LM RM]
+            %['sensor' LUS RUS]
+            receivedData = updateReceivedData(this);
             
             %will trigger every time recieved data is ready to be added to DB
             if this.dataReady
                 if this.sim.isOn
+                    fprintf('Cannot add data, Sim is running.\n');
                     %do nothing.
                     return
                 else %no sim running
-                    
+                    newRealData = getLastDataSet(this.db, 'real');
                     %get lastest sim data and use that as new sim value
                     newSimData = getLastDataSet(this.db, 'sim');
                     
@@ -157,6 +153,38 @@ classdef SerialCom < handle
     end
     
     methods (Access = private)
+        
+        function d = updateReceivedData(this)
+            d = [0 0 0];
+            
+            len = length(this.receivedData);
+            if(len == 0) %this should hopefully never happen
+                this.dataReady = 0;
+                fprintf('ERROR: No data available but recieving function triggered.\n')
+                return
+            end
+            
+            lastByte = this.receivedData(len);
+            %convert to char or int or whatever
+            
+            
+            switch(lastByte)
+                case '0x10'
+                    this.receivedState = 'start';
+                case '0x40'
+                    this.receivedState = 'end';
+                    this.dataReady = 1;
+                otherwise
+                    fprintf('ERROR: Rover has entered Limbo!\n')
+            end
+            
+            %TODO
+            
+            %set dataReady boolean if data is ready
+            %if extra data exists that can't be sent
+            %store in tempData
+        end
+        
         %returns 1 if port is open, otherwise, returns 0
         %input should be of the format 'Serial-COM6'
         function available = portAvailable(~, port)

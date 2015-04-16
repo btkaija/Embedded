@@ -47,30 +47,30 @@ classdef Simulator < handle
             end
         end
         
-        function simulateMove(this)
+        function simulateMove(this, type)
             ERROR = 1;%cm
             fprintf(['Current State: ', this.state, '.\n']);
             
             switch this.state
                 case 'start'
-                    moveForward(this.db, 'sim', 20)
+                    moveForward(this.db, type, 20)
                 case 'left'
-                    moveForward(this.db, 'sim', 10)
+                    moveForward(this.db, type, 10)
                 case 'right'
-                    moveForward(this.db, 'sim', 10)
+                    moveForward(this.db, type, 10)
                 case 'uturn1_1'
-                    moveForward(this.db, 'sim', 30)
+                    moveForward(this.db, type, 30)
                 case 'uturn1_2'
-                    uturn(this.db, 'sim', 'right')
+                    uturn(this.db, type, 'right')
                 case 'uturn1_3'
-                    moveForward(this.db, 'sim', 30)
+                    moveForward(this.db, type, 30)
                 case 'middle'
-                    moveForward(this.db, 'sim', 10)
+                    moveForward(this.db, type, 10)
                 otherwise
                     fprintf('No state selected for Sim.\n')
                     return
             end
-            ds = getLastDataSet(this.db, 'sim');
+            ds = getLastDataSet(this.db, type);
             
             %follow left wall state
             if(abs(ds(1) - ds(3)) < ERROR && strcmp(this.state, 'start'))
@@ -112,7 +112,7 @@ classdef Simulator < handle
             updateRoverData(this.db);
             
             %make rover move here
-            simulateMove(this)
+            simulateMove(this, 'sim')
             
                        
         end
