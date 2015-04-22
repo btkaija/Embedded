@@ -113,12 +113,13 @@ classdef SerialCom < handle
                 binaryData = fread(obj, numBytes);
             else
                 fprintf('No bytes! Something went wrong.\n')
+                return
             end
             this.receivedBits = [this.receivedBits binaryData];
             
             %show data
             binaryData
-            
+            return
             %get the values for newRealData as sensor or motor
             %['motor' LM RM]
             %['sensor' LUS RUS]

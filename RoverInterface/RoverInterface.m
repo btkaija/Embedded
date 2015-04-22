@@ -50,7 +50,7 @@ classdef RoverInterface < handle
             ri.simulator = Simulator(ri.db, ri.port);
             
             %create serial port reciever
-            ri.port = SerialCom('Serial-COM1', ri.simulator, ri.db);
+            ri.port = SerialCom('Serial-COM3', ri.simulator, ri.db);
             
             
             %init GUI
@@ -429,6 +429,7 @@ classdef RoverInterface < handle
             
         end
         
+        
     end
     
     %private init methods
@@ -635,7 +636,7 @@ classdef RoverInterface < handle
         %starts the timer for the gui update
         function startGUITimer(ri)
             ri.updateGUITimer = timer;
-            ri.updateGUITimer.BusyMode = 'drop';
+            ri.updateGUITimer.BusyMode = 'queue';
             ri.updateGUITimer.TimerFcn = {@RoverInterface.updateGUI_callback, ri};
             ri.updateGUITimer.Period = 1;
             ri.updateGUITimer.ExecutionMode = 'fixedRate';
