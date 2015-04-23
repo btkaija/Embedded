@@ -50,7 +50,7 @@ classdef SerialCom < handle
             %init port
             this.port = serial(this.portNumber, 'BaudRate', 57600, 'Terminator', 126);
             this.port.BytesAvailableFcnMode = 'byte';
-            this.port.BytesAvailableFcnCount = 1;
+            this.port.BytesAvailableFcnCount = 19;
             this.port.BytesAvailableFcn = {@SerialCom.bytesAvailable_callback, this};
             %try opening port. if error delete the port
             try
@@ -111,11 +111,14 @@ classdef SerialCom < handle
             binaryData = [];
             if numBytes > 0
                 binaryData = fread(obj, numBytes);
+            elseif(numBytes ~= 19)
+                fprintf('Trash data recieved.\n')
+                return
             else
                 fprintf('No bytes! Something went wrong.\n')
                 return
             end
-            this.receivedBits = [this.receivedBits binaryData];
+            %this.receivedBits = [this.receivedBits binaryData];
             
             %show data
             binaryData
