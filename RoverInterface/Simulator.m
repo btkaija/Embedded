@@ -18,6 +18,10 @@ classdef Simulator < handle
             this.state = 'start';
         end
         
+        %gets the state of the simulated rover
+        function s = getSimState(this)
+            s = this.state;
+        end
         
         %this function (re)creates and starts the timer
         function startSimulateDataTimer(this)

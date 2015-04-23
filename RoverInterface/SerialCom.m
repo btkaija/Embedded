@@ -77,6 +77,7 @@ classdef SerialCom < handle
         function d = getReceivedData(this)
             if this.dataReady
                 d = this.receivedData;
+                this.receivedData = [];
             else
                 fprintf('No data ready')
             end
@@ -102,31 +103,47 @@ classdef SerialCom < handle
             this.autoOn = 0;
         end
         
+        %gets the state of the automator
+        function s = getRealState(this)
+            s = getState(this.auto);
+        end
         
     end
     methods (Static)
         function bytesAvailable_callback(obj, ~, this)
             fprintf('Byte recieved\n')
             numBytes = obj.BytesAvailable;
-            binaryData = [];
-            if numBytes > 0
-                binaryData = fread(obj, numBytes);
-            elseif(numBytes ~= 19)
+            
+            %check recieved number of bytes
+            if numBytes == 19
+                binaryData = fread(obj, numBytes)
+                if(binaryData(1) == 64 && binaryData(19) == 128 && binaryData(3) == 159)
+                    fprintf('All sensor data present.\n')
+                end
+                
+                if(binaryData(14) == 64 && binaryData(13) == 128 && binaryData(16) == 155)
+                    fprintf('All motor data present.\n')
+                end
+                    
+            elseif(numBytes ~= 0)
                 fprintf('Trash data recieved.\n')
                 return
             else
                 fprintf('No bytes! Something went wrong.\n')
                 return
             end
-            %this.receivedBits = [this.receivedBits binaryData];
+            
+            this.receivedBits = binaryData;
             
             %show data
-            binaryData
-            return
-            %get the values for newRealData as sensor or motor
-            %['motor' LM RM]
-            %['sensor' LUS RUS]
-            receivedData = updateReceivedData(this);
+            %binaryData
+            
+            %get the values for newRealData 
+            %[LM RM]
+            %[LIR RIR LUS RUS]
+            receivedSensorData = updateReceivedSensorData(this);
+            receivedMotorData = updateReceivedMotorData(this);
+            
             
             %will trigger every time recieved data is ready to be added to DB
             if this.dataReady
@@ -139,11 +156,26 @@ classdef SerialCom < handle
                     %get lastest sim data and use that as new sim value
                     newSimData = getLastDataSet(this.db, 'sim');
                     
-                    %use when part above is implemented
-                    %newSimData
-                    %newRealData = receivedData;
-                    %receivedData = tempData;
+                    if(strcmp('sensor',receivedSensorData(1)))
+                        newRealData(1:4) = receivedSensorData(2:5);
+                    else %tilt
+                        newRealData(7) = receivedSensorData(2);
+                    end
+                    
+                    newRealData(5:6) = receivedMotorData;
+                    %update sensor readings
                     appendData(this.db, newSimData, newRealData);
+                    
+                    %move rover to new position
+                    prev_dist = newRealData(7);
+                    new_dist = receivedMotorData(1);
+                    delta_dist = prev_dist-new_dist;
+                    if(delta_dist < 0)
+                        moveForward(this.db, 'real', new_dist)
+                    else
+                        moveForward(this.db, 'real', delta_dist)
+                    end
+                    
                 end
                 
                 %automatically decide and send next command
@@ -158,35 +190,54 @@ classdef SerialCom < handle
     
     methods (Access = private)
         
-        function d = updateReceivedData(this)
-            d = [0 0 0];
-            
-            len = length(this.receivedData);
-            if(len == 0) %this should hopefully never happen
-                this.dataReady = 0;
-                fprintf('ERROR: No data available but recieving function triggered.\n')
-                return
-            end
-            
-            lastByte = this.receivedData(len);
-            %convert to char or int or whatever
-            
-            
-            switch(lastByte)
-                case '0x10'
-                    this.receivedState = 'start';
-                case '0x40'
-                    this.receivedState = 'end';
-                    this.dataReady = 1;
+        function d = updateReceivedMotorData(this)
+
+            encoderTurns = this.receivedBits(18)*100 + this.receivedBits(17);
+            dist  = encoderTurns/80;
+            d = [dist dist];
+        end
+        
+        function d = updateReceivedSensorData(this)
+
+            isSensor = 1;
+            %get the indicator byte
+            switch(this.receivedBits(12)) 
+                case 170 %0xAA
+                    %starting position
+                case 218 %0xDA
+                    %inside left lane
+                case 220 %0xDC
+                    %exit left lane
+                case 187 %0xBB
+                    %inside middle lane
+                case 188 %0xBC
+                    %exit middle lane
+                case 202 %0xCA
+                    %enter right lane
+                case 204 %0xCC
+                    %exit course
+                case 250 %0xFA
+                    %up ramp
+                    isSensor = 0;
+                case 251 %0xFB
+                    %down ramp
+                    isSensor = 0;
                 otherwise
-                    fprintf('ERROR: Rover has entered Limbo!\n')
+                    %should never reach here
+                    isSensor = 0;
+                    fprintf('Something is wrong, Incorrect indicator.\n')
             end
             
-            %TODO
+            if(isSensor)
+                right = this.receivedBits(6);
+                left = this.receivedBits(10);
+                d = ['sensor', left, right, left, right];
+            else %is tilt
+                fprintf('Need to handle tilt data receipt!\n')
+                d = ['tilt', 0, 0, 0, 0];
+            end
             
-            %set dataReady boolean if data is ready
-            %if extra data exists that can't be sent
-            %store in tempData
+            
         end
         
         %returns 1 if port is open, otherwise, returns 0
