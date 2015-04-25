@@ -153,7 +153,7 @@ classdef RoverInterface < handle
             fprintf('Halt button.\n');
             stopAutomator(ri.port);
             %send stop command
-            sendMessage(ri.port, 'auto-end');
+            sendMessage(ri.port, 'auto-stop');
         end
         
         %asks the rover to turn XX number of degrees
@@ -243,7 +243,7 @@ classdef RoverInterface < handle
                 
                 moveForward(ri.db, 'real', dist)
                 %send command
-                sendMessage(ri.port, ['forward-',dist]);
+                sendMessage(ri.port, ['forward-',num2str(dist)]);
             elseif ri.controlSim.Value
                 %stop sim
                 if ri.simulator.isOn
@@ -277,7 +277,7 @@ classdef RoverInterface < handle
                 
                 moveReverse(ri.db, 'real', dist);
                 %send command
-                sendMessage(ri.port, ['reverse-',dist]);
+                sendMessage(ri.port, ['reverse-',num2str(dist)]);
             elseif ri.controlSim.Value
                 %stop sim
                 if ri.simulator.isOn
@@ -297,7 +297,7 @@ classdef RoverInterface < handle
             if ri.uturnRightToggle.Value
                 dir = 'right';
             elseif ri.uturnLeftToggle.Value
-                dir = 'left';
+                dir = 'left'; 
             else
                 dir = 'broken';
             end
@@ -403,6 +403,7 @@ classdef RoverInterface < handle
             %plot rovers
 
             dl = getDataLength(ri.db);
+            ra = getAxes(ri.roverMap);
             simXpos = getXposData(ri.db, 'sim');
             simYpos = getYposData(ri.db, 'sim');
             simAngle = getAngleData(ri.db, 'sim');
@@ -410,12 +411,20 @@ classdef RoverInterface < handle
             realYpos = getYposData(ri.db, 'real');
             realAngle = getAngleData(ri.db, 'real');
             
-            hold(getAxes(ri.roverMap), 'on')
-            cla(getAxes(ri.roverMap));
+            hold(ra, 'on')
+            cla(ra);
             drawWalls(ri.roverMap)
+            
             drawRover(ri.roverMap, simXpos(dl), simYpos(dl), simAngle(dl), 'sim')
             drawRover(ri.roverMap, realXpos(dl), realYpos(dl), realAngle(dl), 'real')
-            hold(getAxes(ri.roverMap), 'off')
+            
+            drawPath(ri.roverMap, simXpos, simYpos, realXpos, realYpos, simSlope, realSlope, dl)
+            
+            hold(ra, 'off')
+            
+            drawnow;
+            
+            pause(0.05);
         end
         
         %when the window is closed

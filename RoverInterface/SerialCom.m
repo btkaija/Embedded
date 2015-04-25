@@ -86,12 +86,37 @@ classdef SerialCom < handle
         
         %send message over the port
         function sendMessage(this, msg)
-            out = strcat('Sending message: "', msg, '" over port "',...
+            out = strcat('Sending message: "', msg, '" over port ',...
                 this.portName,'.\n');
             fprintf(out);
+
+            msgParts = strsplit(msg, '-');
             %any preprossing goes here
+            
+            if strcmp(msgParts(1), 'uturn')
+                
+                b1 = hex2dec('4A');
+                if strcmp('right', msgParts(2))
+                    b2 = hex2dec('4A');
+                else
+                    b2 = hex2dec('4B');
+                end
+            elseif strcmp(msgParts(1), 'forward')        
+
+                b1 = hex2dec('4B');
+                b2 = str2double(msgParts(2));
+            elseif strcmp(msgParts(1), 'reverse')
+
+                b1 = hex2dec('4C');
+                b2 = str2double(msgParts(2));
+                    
+            else
+                fprintf('No valid message format.\n');
+            end
+            %compile message and send
+            msgBytes = [hex2dec('40'), b1, b2, hex2dec('40')];
+            fwrite(this.port, msgBytes)
         end
-        
         %starts the automation
         function startAutomator(this)
             fprintf('Starting Automator.\n');
@@ -111,17 +136,17 @@ classdef SerialCom < handle
     end
     methods (Static)
         function bytesAvailable_callback(obj, ~, this)
-            fprintf('Byte recieved\n')
+            fprintf('Bytes recieved.\n')
             numBytes = obj.BytesAvailable;
             
             %check recieved number of bytes
             if numBytes == 19
-                binaryData = fread(obj, numBytes)
-                if(binaryData(1) == 64 && binaryData(19) == 128 && binaryData(3) == 159)
+                binaryData = fread(obj, numBytes);
+                if(binaryData(1) == 64 && binaryData(13) == 128 && binaryData(3) == 159)
                     fprintf('All sensor data present.\n')
                 end
                 
-                if(binaryData(14) == 64 && binaryData(13) == 128 && binaryData(16) == 155)
+                if(binaryData(14) == 64 && binaryData(19) == 128 && binaryData(16) == 155)
                     fprintf('All motor data present.\n')
                 end
                     
@@ -141,7 +166,7 @@ classdef SerialCom < handle
             %get the values for newRealData 
             %[LM RM]
             %[LIR RIR LUS RUS]
-            receivedSensorData = updateReceivedSensorData(this);
+            [receivedSensorData, ind] = updateReceivedSensorData(this);
             receivedMotorData = updateReceivedMotorData(this);
             
             
@@ -156,8 +181,8 @@ classdef SerialCom < handle
                     %get lastest sim data and use that as new sim value
                     newSimData = getLastDataSet(this.db, 'sim');
                     
-                    if(strcmp('sensor',receivedSensorData(1)))
-                        newRealData(1:4) = receivedSensorData(2:5);
+                    if(strcmp('sensor',ind))
+                        newRealData(1:4) = receivedSensorData(1:4);
                     else %tilt
                         newRealData(7) = receivedSensorData(2);
                     end
@@ -167,14 +192,6 @@ classdef SerialCom < handle
                     appendData(this.db, newSimData, newRealData);
                     
                     %move rover to new position
-                    prev_dist = newRealData(7);
-                    new_dist = receivedMotorData(1);
-                    delta_dist = prev_dist-new_dist;
-                    if(delta_dist < 0)
-                        moveForward(this.db, 'real', new_dist)
-                    else
-                        moveForward(this.db, 'real', delta_dist)
-                    end
                     
                 end
                 
@@ -183,6 +200,7 @@ classdef SerialCom < handle
                     newMsg = getNextCommand(this.auto);
                     sendMessage(this, newMsg);
                 end
+                this.dataReady = 0;
             end
         end
 
@@ -192,17 +210,21 @@ classdef SerialCom < handle
         
         function d = updateReceivedMotorData(this)
 
-            encoderTurns = this.receivedBits(18)*100 + this.receivedBits(17);
+            encoderTurns = [dec2hex(this.receivedBits(18)) dec2hex(this.receivedBits(17))];
+            encoderTurns = hex2dec(encoderTurns);
             dist  = encoderTurns/80;
             d = [dist dist];
+            this.dataReady = 1;
         end
         
-        function d = updateReceivedSensorData(this)
+        function [d, ind] = updateReceivedSensorData(this)
 
             isSensor = 1;
+            
             %get the indicator byte
             switch(this.receivedBits(12)) 
                 case 170 %0xAA
+                    fprintf('at starting position.\n')
                     %starting position
                 case 218 %0xDA
                     %inside left lane
@@ -219,9 +241,13 @@ classdef SerialCom < handle
                 case 250 %0xFA
                     %up ramp
                     isSensor = 0;
+                    setState(this.auto, 'up_ramp')
+                    tiltA = 0.3;
                 case 251 %0xFB
                     %down ramp
                     isSensor = 0;
+                    setState(this.auto, 'down_ramp')
+                    tiltA = -0.3;
                 otherwise
                     %should never reach here
                     isSensor = 0;
@@ -231,12 +257,14 @@ classdef SerialCom < handle
             if(isSensor)
                 right = this.receivedBits(6);
                 left = this.receivedBits(10);
-                d = ['sensor', left, right, left, right];
+                d = [left right left right];
+                ind = 'sensor';
             else %is tilt
                 fprintf('Need to handle tilt data receipt!\n')
-                d = ['tilt', 0, 0, 0, 0];
+                ind = 'tilt';
+                d = [tiltA, 0, 0, 0];
             end
-            
+            this.dataReady = 1;
             
         end
         
