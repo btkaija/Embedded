@@ -109,12 +109,19 @@ classdef SerialCom < handle
 
                 b1 = hex2dec('4C');
                 b2 = str2double(msgParts(2));
-                    
+            elseif strcmp(msgParts(1), 'auto')
+                if strcmp(msgParts(2), 'start')
+                    b1 = hex2dec('5A');
+                    b2 = 50;
+                else %stop
+                    b1 = hex2dec('5B');
+                    b2 = 50;
+                end
             else
                 fprintf('No valid message format.\n');
             end
             %compile message and send
-            msgBytes = [hex2dec('40'), b1, b2, hex2dec('40')];
+            msgBytes = [hex2dec('40'), b1, b2, hex2dec('80')];
             fwrite(this.port, msgBytes)
         end
         %starts the automation

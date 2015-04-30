@@ -135,17 +135,17 @@ classdef RoverInterface < handle
         %this function also clears the databank
         function traverseButton_callback(ri, ~, ~)
             fprintf('Traverse button.\n');
-            
-            choice = questdlg(['Starting the rover traversal will reset all data.\n',...
-                'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
-            if strcmp('No', choice)
-                return
-            else
-                resetDB(ri.db);
-                startAutomator(ri.port);
-                %send start command
-                sendMessage(ri.port, 'auto-begin');
-            end
+            sendMessage(ri.port, 'auto-begin');
+%             choice = questdlg(['Starting the rover traversal will reset all data.\n',...
+%                 'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
+%             if strcmp('No', choice)
+%                 return
+%             else
+%                 resetDB(ri.db);
+%                 startAutomator(ri.port);
+%                 %send start command
+%                 
+%             end
         end
         
         %stops rover automation
