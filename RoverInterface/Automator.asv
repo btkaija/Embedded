@@ -16,19 +16,19 @@ classdef Automator < handle
                 case 'start'
                     moveForward(this.db, type, dist)
                 case 'in_left'
-                    moveForward(this.db, type, dist)
+                    moveForward(this.db, type, 10)
                 case 'in_right'
-                    moveForward(this.db, type, dist)
-                case 'out_left'
-                    uturn(this.db, type, 'left')
-                case 'out_right'
+                    moveForward(this.db, type, 10)
+                case 'uturn1_1'
+                    moveForward(this.db, type, 30)
+                case 'uturn1_2'
                     uturn(this.db, type, 'right')
-                case 'in_middle'
-                    moveForward(this.db, type, dist)
-                case 'exit'
-                    %do nothing
+                case 'uturn1_3'
+                    moveForward(this.db, type, 30)
+                case 'middle'
+                    moveForward(this.db, type, 10)
                 otherwise
-                    fprintf('No state selected for real rover.\n')
+                    fprintf('No state selected for Sim.\n')
                     return
             end
         end

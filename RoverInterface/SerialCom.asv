@@ -229,7 +229,7 @@ classdef SerialCom < handle
                     appendData(this.db, newSimData, newRealData);
                     
                     %move rover to new position
-                    motordist = receivedMotorData(1)*1.5;
+                    motordist = receivedMotorData(1);
                     setNewRoverPos(this.auto, 'sim', motordist)
                     setNewRoverPos(this.auto, 'real', motordist)
                 end

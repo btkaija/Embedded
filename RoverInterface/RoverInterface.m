@@ -50,7 +50,7 @@ classdef RoverInterface < handle
             ri.simulator = Simulator(ri.db, ri.port);
             
             %create serial port reciever
-            ri.port = SerialCom('Serial-COM3', ri.simulator, ri.db);
+            ri.port = SerialCom('Serial-COM5', ri.simulator, ri.db);
             
             
             %init GUI
@@ -91,7 +91,7 @@ classdef RoverInterface < handle
             fprintf('Exporting current data from plots...\n')
             [file, path] = uiputfile('results.dat','Save as');
             
-            if file~=0 && path~=0
+            if isequal(file, 0) && isequal(path, 0)
                 filepath = strcat(path, file);
                 allSimData = getAllData(ri.db, 'sim');
                 allRealData = getAllData(ri.db, 'real');
@@ -106,7 +106,7 @@ classdef RoverInterface < handle
             fprintf('Importing new data to plots...\n')
             [file, path] = uigetfile('*.dat', 'Select the rover data file');
             
-            if file~=0 && path~=0
+            if isequal(file, 0) && isequal(path, 0)
                 filepath = strcat(path, file);
                 allData = dlmread(filepath);
                 l = length(allData);
@@ -135,17 +135,20 @@ classdef RoverInterface < handle
         %this function also clears the databank
         function traverseButton_callback(ri, ~, ~)
             fprintf('Traverse button.\n');
-            sendMessage(ri.port, 'auto-begin');
-%             choice = questdlg(['Starting the rover traversal will reset all data.\n',...
-%                 'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
-%             if strcmp('No', choice)
-%                 return
-%             else
-%                 resetDB(ri.db);
-%                 startAutomator(ri.port);
-%                 %send start command
-%                 
-%             end
+            
+            choice = questdlg(['Starting the rover traversal will reset all data.\n',...
+                'Would you like to continue?'], 'Continue?', 'Yes', 'No', 'No');
+            if strcmp('No', choice)
+                sendMessage(ri.port, 'auto-begin');
+                return
+            else
+                sendMessage(ri.port, 'auto-begin');
+                resetDB(ri.db);
+                clearButton_callback(ri, 0, 0);
+                startAutomator(ri.port);
+                %send start command
+                
+            end
         end
         
         %stops rover automation
@@ -450,32 +453,32 @@ classdef RoverInterface < handle
 
             %init all plots
             ri.rightIRSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .75 .5 .25], 'YLim', [0 30]);
+                'OuterPosition', [.5 .75 .5 .25], 'YLim', [0 300]);
             ri.rightIRSensorPlot.Title.String = 'Right IR Sensor';
             %axis(ri.rightIRSensorPlot, [0 dl 0 30]);
             
             ri.leftIRSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .75 .5 .25], 'YLim', [0 30]);
+                'OuterPosition', [0 .75 .5 .25], 'YLim', [0 300]);
             ri.leftIRSensorPlot.Title.String = 'Left IR Sensor';
             %axis(ri.leftIRSensorPlot, [0 dl 0 30]);
             
             ri.rightUSSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .5 .5 .25], 'YLim', [0 200]);
+                'OuterPosition', [.5 .5 .5 .25], 'YLim', [0 300]);
             ri.rightUSSensorPlot.Title.String = 'Right US Sensor';
             %axis(ri.rightUSSensorPlot, [0 dl 0 200]);
                         
             ri.leftUSSensorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .5 .5 .25], 'YLim', [0 200]);
+                'OuterPosition', [0 .5 .5 .25], 'YLim', [0 300]);
             ri.leftUSSensorPlot.Title.String = 'Left US Sensor';
             %axis(ri.leftUSSensorPlot, [0 dl 0 200]);
             
             ri.leftMotorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [0 .25 .5 .25], 'YLim', [0 5]);
+                'OuterPosition', [0 .25 .5 .25], 'YLim', [0 20]);
             ri.leftMotorPlot.Title.String = 'Left Motor Encoder';
             %axis(ri.leftMotorPlot, [0 dl 0 5]);
             
             ri.rightMotorPlot = axes('Parent', dataPanel,...
-                'OuterPosition', [.5 .25 .5 .25], 'YLim', [0 5]);
+                'OuterPosition', [.5 .25 .5 .25], 'YLim', [0 20]);
             ri.rightMotorPlot.Title.String = 'Right Motor Encoder';
             %axis(ri.rightMotorPlot, [0 dl 0 5]);
             

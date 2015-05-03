@@ -13,9 +13,9 @@ classdef DataBank < handle
         
         %resets the data base to both rovers starting position
         function resetDB(this)
-            this.simData = [25 25 180 180 0 0 0 1 1 90];
+            this.simData = [180 180 180 180 0 0 0 1.5 1.5 90];
 
-            this.realData = [25 25 180 180 0 0 0 1 1 90];
+            this.realData = [25 25 180 180 0 0 0 1.5 1.5 90];
 
             this.dataLen = 1;
             this.totalLen = 10;
@@ -146,9 +146,9 @@ classdef DataBank < handle
         %GET all data
         function d = getAllData(this, type)
             if strcmp(type, 'real')
-                d = this.allRealData;
+                d = this.realData;
             elseif strcmp(type, 'sim')
-                d = this.allSimData;
+                d = this.simData;
             else
                 fprintf('Specify either real or sim data\n')
             end
@@ -782,10 +782,11 @@ classdef DataBank < handle
                 calcLMData(this, 'sim'), calcRMData(this, 'sim'),...
                 calcTiltData(this, 'sim'), oldSim(8), oldSim(9), oldSim(10)];
             oldReal = getLastDataSet(this, 'real');
-            rData = [calcLIRData(this, 'real'), calcRIRData(this, 'real'),...
-                calcLUSData(this, 'real'), calcRUSData(this, 'real'),...
-                calcLMData(this, 'real'), calcRMData(this, 'real'),...
-                calcTiltData(this, 'real'), oldReal(8), oldReal(9), oldReal(10)];
+            rData = oldReal;
+%             rData = [calcLIRData(this, 'real'), calcRIRData(this, 'real'),...
+%                 calcLUSData(this, 'real'), calcRUSData(this, 'real'),...
+%                 calcLMData(this, 'real'), calcRMData(this, 'real'),...
+%                 calcTiltData(this, 'real'), oldReal(8), oldReal(9), oldReal(10)];
             
             appendData(this, sData, rData)
         end
