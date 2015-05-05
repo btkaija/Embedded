@@ -22,8 +22,8 @@ classdef SerialCom < handle
             this.sim = newSim;
             this.db = newDB;
             
-            uturn1 = 0;
-            uturn2 = 0;
+            this.uturn1 = 0;
+            this.uturn2 = 0;
             
             %used to turn the data into a msg
             this.auto = Automator(newDB);
@@ -102,9 +102,9 @@ classdef SerialCom < handle
                 
                 b1 = hex2dec('4A');
                 if strcmp('right', msgParts(2))
-                    b2 = hex2dec('4A');
-                else
                     b2 = hex2dec('4B');
+                else
+                    b2 = hex2dec('4A');
                 end
             elseif strcmp(msgParts(1), 'forward')        
 
@@ -182,7 +182,7 @@ classdef SerialCom < handle
                     
             elseif(numBytes ~= 0)
                 %reguired to clear serial buffer
-                binaryData_trash = fread(obj, numbytes);
+                binaryData_trash = fread(obj, numBytes);
                 fprintf('Trash data recieved.\n')
                 return
             else
@@ -257,7 +257,8 @@ classdef SerialCom < handle
         end
         
         function [d, ind] = updateReceivedSensorData(this)
-
+            d = [ 0 0 0 0];
+            ind = 'none';
             isSensor = 1;
             isTilt = 0;
             %get the indicator byte
@@ -273,7 +274,7 @@ classdef SerialCom < handle
                 case 221 %0xDD
                     %exit left lane
                     fprintf('Exit left lane.\n')
-                    if(strcmp(getState(this.auto), 'out_left') || isequal(this.uturn1, 1))
+                    if(strcmp(getState(this.auto), 'in_left') || isequal(this.uturn1, 1))
                         setState(this.auto, 'in_midddle')                        
                     else
                         this.uturn1 = 1;
@@ -287,7 +288,7 @@ classdef SerialCom < handle
                 case 188 %0xBC
                     %exit middle lane
                     fprintf('Exit middle lane.\n')
-                    if(strcmp(getState(this.auto), 'out_middle') || isequal(this.uturn2, 1))
+                    if(strcmp(getState(this.auto), 'in_middle') || isequal(this.uturn2, 1))
                         setState(this.auto, 'in_right')                        
                     else
                         this.uturn1 = 1;

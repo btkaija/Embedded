@@ -13,9 +13,9 @@ classdef DataBank < handle
         
         %resets the data base to both rovers starting position
         function resetDB(this)
-            this.simData = [180 180 180 180 0 0 0 1.5 1.5 90];
+            this.simData = [180 180 180 180 0 0 0 1 1.5 90];
 
-            this.realData = [25 25 180 180 0 0 0 1.5 1.5 90];
+            this.realData = [25 25 180 180 0 0 0 1 1.5 90];
 
             this.dataLen = 1;
             this.totalLen = 10;

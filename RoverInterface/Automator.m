@@ -20,11 +20,11 @@ classdef Automator < handle
                 case 'in_right'
                     moveForward(this.db, type, dist)
                 case 'out_left'
-                    uturn(this.db, type, 'left')
-                case 'out_right'
                     uturn(this.db, type, 'right')
+                case 'out_middle'
+                    uturn(this.db, type, 'left')
                 case 'in_middle'
-                    moveForward(this.db, type, dist)
+                    moveForward(this.db, type, dist)                    
                 case 'exit'
                     %do nothing
                 otherwise

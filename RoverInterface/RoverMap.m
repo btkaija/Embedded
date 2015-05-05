@@ -138,12 +138,12 @@ classdef RoverMap < handle
         function drawPath(this, simXpos, simYpos, realXpos, realYpos, simAngle, realAngle, dl)
             hold (this.mapAxes, 'on')
             for i  = 1:1:dl
-%                 if(abs(simAngle(i)) > 1)
+%                 if(abs(simAngle(i)) > 0.1)
 %                     plot(this.mapAxes, simXpos(i), simYpos(i), 'bx')
 %                 else
 %                     plot(this.mapAxes, simXpos(i), simYpos(i), 'bo')
 %                 end
-                if(abs(realAngle(i)) > 1)
+                if(abs(realAngle(i)) > 0.1)
                     plot(this.mapAxes, realXpos(i), realYpos(i), 'rx')
                 else
                     plot(this.mapAxes, realXpos(i), realYpos(i), 'ro')
